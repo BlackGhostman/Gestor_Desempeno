@@ -4,9 +4,9 @@ using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.Web.Services; // Needed for WebMethod
-using System.Globalization; // Needed for CalendarWeekRule
-using System.Web.Script.Serialization; // Needed for JSON response
+using System.Web.Services;
+using System.Globalization;
+using System.Web.Script.Serialization;
 using System.Configuration;
 using System.Data;
 
@@ -24,12 +24,11 @@ namespace Gestor_Desempeno
 
     public partial class Desempeno : System.Web.UI.Page
     {
-        // DAL Instances are now instance members
+        // DAL Instances
         private MetaIndividualDAL metaIndDAL = new MetaIndividualDAL();
         private RespuestaDAL respuestaDAL = new RespuestaDAL();
         private DetalleEstadoDAL detalleEstadoDAL = new DetalleEstadoDAL();
         private UsuarioDAL usuarioDAL_Instance = new UsuarioDAL();
-
 
         // Constants for Estado IDs
         private const int ID_ESTADO_RESPONDIDO = 11;
@@ -40,10 +39,19 @@ namespace Gestor_Desempeno
         // Instancia del servicio web
         public apivs2020.wsapi vs2020 = new apivs2020.wsapi();
 
+        private const string CSS_META_VENCIDA = "meta-vencida";
+        private const string CSS_META_HOY = "meta-hoy";
+        private const string CSS_META_A_TIEMPO = "meta-a-tiempo";
+        private const string CSS_META_SEMANAL_ORIGINAL = "meta-semanal-original";
+
+        private const string BADGE_STYLE_VENCIDA = "background-color: #DC3545; color: white;";
+        private const string BADGE_STYLE_HOY = "background-color: #FFC107; color: #000;";
+        private const string BADGE_STYLE_A_TIEMPO = "background-color: #198754; color: white;";
+        private const string BADGE_STYLE_SEMANAL_ORIGINAL = "background-color: #0EA5E9; color: white;";
+
+
         protected void Page_Load(object sender, EventArgs e)
         {
-            // --- Security Checks ---
-
             if (Session["UsuarioID"] == null) { Response.Redirect("~/Login.aspx?mensaje=SesionExpirada"); return; }
 
             bool necesitaCambiar = false;
@@ -51,10 +59,7 @@ namespace Gestor_Desempeno
             UsuarioInfo infoActual = usuarioDAL_Instance.ObtenerInfoUsuario(idUsuarioActual);
             if (infoActual != null && infoActual.NecesitaCambiarContrasena) { necesitaCambiar = true; }
             if (necesitaCambiar) { Response.Redirect("~/CambiarContrasena.aspx"); return; }
-            
-            // --- End Security Checks ---
 
-            // Asegurar que el formulario tenga el enctype correcto para subida de archivos
             if (this.Page.Form != null)
             {
                 this.Page.Form.Enctype = "multipart/form-data";
@@ -65,7 +70,7 @@ namespace Gestor_Desempeno
                 ID_ESTADO_INACTIVO_META_IND = detalleEstadoDAL.ObtenerIdEstadoPorDescripcion("Inactivo", ID_CLASE_META_IND);
                 if (ID_ESTADO_INACTIVO_META_IND == null)
                 {
-                    Console.WriteLine($"CRITICAL ERROR: Could not find 'Inactivo' state ID for Clase {ID_CLASE_META_IND}. Logical delete will fail.");
+                    Console.WriteLine($"CRITICAL ERROR: Could not find 'Inactivo' state ID for Clase {ID_CLASE_META_IND}.");
                     if (!IsPostBack) MostrarMensaje("Error de configuración: No se encontró el estado inactivo para metas.", false);
                 }
             }
@@ -88,64 +93,175 @@ namespace Gestor_Desempeno
         {
             try
             {
-                List<MetaIndividualInfo> todasLasMetas = metaIndDAL.ObtenerMetasIndividualesPorUsuario(usuario);
+                List<MetaIndividualInfo> todasLasMetasDelUsuario = metaIndDAL.ObtenerMetasIndividualesPorUsuario(usuario);
+                var metasParaVencidas = new List<MetaIndividualInfoViewModel>();
+                var metasParaSemana1 = new List<MetaIndividualInfoViewModel>();
+                var metasParaSemana2 = new List<MetaIndividualInfoViewModel>();
+                var metasParaSemana3 = new List<MetaIndividualInfoViewModel>();
+                var metasParaSemana4 = new List<MetaIndividualInfoViewModel>();
+                var metasParaSemana5 = new List<MetaIndividualInfoViewModel>();
 
-                List<MetaIndividualInfo> metasFinalizablesInicial = todasLasMetas
-                                                                    .Where(m => m.EsFinalizable == true)
-                                                                    .ToList();
-                List<MetaIndividualInfo> metasSemanales = todasLasMetas
-                                                            .Where(m => m.EsFinalizable != true)
-                                                            .ToList();
-
-                List<MetaIndividualInfo> metasFinalizablesFiltradas = new List<MetaIndividualInfo>();
-                if (metasFinalizablesInicial.Any())
-                {
-                    List<int> idsFinalizables = metasFinalizablesInicial.Select(m => m.IdMetaIndividual).ToList();
-                    HashSet<int> idsConRespuestaFinalizada = respuestaDAL.ObtenerIdsMetasConEstadoRespuesta(idsFinalizables, ID_ESTADO_RESPONDIDO);
-                    metasFinalizablesFiltradas = metasFinalizablesInicial
-                                                    .Where(m => !idsConRespuestaFinalizada.Contains(m.IdMetaIndividual))
+                List<int> idsFinalizablesOriginales = todasLasMetasDelUsuario
+                                                    .Where(m => m.EsFinalizable == true)
+                                                    .Select(m => m.IdMetaIndividual)
                                                     .ToList();
+
+                HashSet<int> idsConRespuestaTotalmenteFinalizada = new HashSet<int>();
+                if (idsFinalizablesOriginales.Any())
+                {
+                    idsConRespuestaTotalmenteFinalizada = respuestaDAL.ObtenerIdsMetasConEstadoRespuesta(idsFinalizablesOriginales, ID_ESTADO_RESPONDIDO);
                 }
 
-                rptMetasFinalizables.DataSource = metasFinalizablesFiltradas;
-                rptMetasFinalizables.DataBind();
-                pnlEmptyMetasFinalizables.Visible = (metasFinalizablesFiltradas.Count == 0);
+                DateTime hoy = DateTime.Today;
+                DateTime ahora = DateTime.Now;
 
-                BindMetasSemanales(metasSemanales);
+                foreach (var meta in todasLasMetasDelUsuario)
+                {
+                    var viewModel = new MetaIndividualInfoViewModel(meta);
+
+                    if (meta.EsFinalizable == true)
+                    {
+                        if (idsConRespuestaTotalmenteFinalizada.Contains(meta.IdMetaIndividual))
+                        {
+                            continue;
+                        }
+
+                        if (!meta.FechaFinal.HasValue)
+                        {
+                            viewModel.EstadoColorCss = CSS_META_A_TIEMPO;
+                            viewModel.MensajeTiempo = "Fecha final no definida";
+                            viewModel.BadgeStyle = BADGE_STYLE_A_TIEMPO;
+                            int semanaActual = GetWeekOfMonth(hoy);
+                            AsignarViewModelASemana(viewModel, semanaActual, metasParaSemana1, metasParaSemana2, metasParaSemana3, metasParaSemana4, metasParaSemana5);
+                            continue;
+                        }
+
+                        DateTime fechaFinalMetaDate = meta.FechaFinal.Value.Date;
+
+                        if (fechaFinalMetaDate < hoy)
+                        {
+                            viewModel.EstadoColorCss = CSS_META_VENCIDA;
+                            viewModel.BadgeStyle = BADGE_STYLE_VENCIDA;
+                            TimeSpan ts = hoy - fechaFinalMetaDate;
+                            viewModel.MensajeTiempo = ts.Days == 1 ? "Venció ayer" : $"Venció hace {ts.Days} días";
+                            metasParaVencidas.Add(viewModel);
+                        }
+                        else if (fechaFinalMetaDate == hoy)
+                        {
+                            viewModel.EstadoColorCss = CSS_META_HOY;
+                            viewModel.BadgeStyle = BADGE_STYLE_HOY;
+                            if (meta.FechaFinal.Value > ahora)
+                            {
+                                TimeSpan restanteHoy = meta.FechaFinal.Value - ahora;
+                                viewModel.MensajeTiempo = $"Vence hoy (en {Math.Floor(restanteHoy.TotalHours)}h {restanteHoy.Minutes}m)";
+                            }
+                            else
+                            {
+                                viewModel.MensajeTiempo = "Vence hoy";
+                            }
+                            int semanaDeVencimientoHoy = GetWeekOfMonth(fechaFinalMetaDate);
+                            AsignarViewModelASemana(viewModel, semanaDeVencimientoHoy, metasParaSemana1, metasParaSemana2, metasParaSemana3, metasParaSemana4, metasParaSemana5);
+                        }
+                        else
+                        {
+                            if (fechaFinalMetaDate.Year == hoy.Year && fechaFinalMetaDate.Month == hoy.Month)
+                            {
+                                viewModel.EstadoColorCss = CSS_META_A_TIEMPO;
+                                viewModel.BadgeStyle = BADGE_STYLE_A_TIEMPO;
+                                TimeSpan ts = fechaFinalMetaDate - hoy;
+                                viewModel.MensajeTiempo = ts.Days == 1 ? "Vence mañana" : $"Vence en {ts.Days} días";
+                                int semanaDeVencimiento = GetWeekOfMonth(fechaFinalMetaDate);
+                                AsignarViewModelASemana(viewModel, semanaDeVencimiento, metasParaSemana1, metasParaSemana2, metasParaSemana3, metasParaSemana4, metasParaSemana5);
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        viewModel.EstadoColorCss = CSS_META_SEMANAL_ORIGINAL;
+                        viewModel.BadgeStyle = BADGE_STYLE_SEMANAL_ORIGINAL;
+                        viewModel.MensajeTiempo = "";
+                        metasParaSemana1.Add(viewModel);
+                        metasParaSemana2.Add(viewModel);
+                        metasParaSemana3.Add(viewModel);
+                        metasParaSemana4.Add(viewModel);
+                        metasParaSemana5.Add(viewModel);
+                    }
+                }
+
+                rptMetasVencidas.DataSource = metasParaVencidas.OrderBy(m => m.Meta.FechaFinal ?? DateTime.MaxValue).ThenBy(m => m.Meta.Descripcion);
+                rptMetasVencidas.DataBind();
+                pnlEmptyMetasVencidas.Visible = !metasParaVencidas.Any();
+
+                BindRepeaterSemanaConViewModel(rptSemana1, pnlEmptySemana1, metasParaSemana1);
+                BindRepeaterSemanaConViewModel(rptSemana2, pnlEmptySemana2, metasParaSemana2);
+                BindRepeaterSemanaConViewModel(rptSemana3, pnlEmptySemana3, metasParaSemana3);
+                BindRepeaterSemanaConViewModel(rptSemana4, pnlEmptySemana4, metasParaSemana4);
+                BindRepeaterSemanaConViewModel(rptSemana5, pnlEmptySemana5, metasParaSemana5);
             }
             catch (Exception ex)
             {
                 MostrarMensaje($"Error cargando metas: {ex.Message}", false);
                 Console.WriteLine($"Error en LoadMetasUsuario: {ex.ToString()}");
-                pnlEmptyMetasFinalizables.Visible = false; // Asegurar que los paneles de vacío se oculten en caso de error general
-                pnlEmptySemana1.Visible = false; pnlEmptySemana2.Visible = false; pnlEmptySemana3.Visible = false; pnlEmptySemana4.Visible = false; pnlEmptySemana5.Visible = false;
+                pnlEmptyMetasVencidas.Visible = true;
+                pnlEmptySemana1.Visible = true; pnlEmptySemana2.Visible = true; pnlEmptySemana3.Visible = true; pnlEmptySemana4.Visible = true; pnlEmptySemana5.Visible = true;
             }
         }
 
-        private void BindMetasSemanales(List<MetaIndividualInfo> metasSemanales)
+        private void AsignarViewModelASemana(MetaIndividualInfoViewModel viewModel, int numeroSemanaDelMes,
+            List<MetaIndividualInfoViewModel> s1, List<MetaIndividualInfoViewModel> s2,
+            List<MetaIndividualInfoViewModel> s3, List<MetaIndividualInfoViewModel> s4, List<MetaIndividualInfoViewModel> s5)
         {
-            bool hayMetasSemanales = (metasSemanales != null && metasSemanales.Count > 0);
-            BindRepeaterSemana(rptSemana1, pnlEmptySemana1, hayMetasSemanales ? metasSemanales : null);
-            BindRepeaterSemana(rptSemana2, pnlEmptySemana2, hayMetasSemanales ? metasSemanales : null);
-            BindRepeaterSemana(rptSemana3, pnlEmptySemana3, hayMetasSemanales ? metasSemanales : null);
-            BindRepeaterSemana(rptSemana4, pnlEmptySemana4, hayMetasSemanales ? metasSemanales : null);
-            BindRepeaterSemana(rptSemana5, pnlEmptySemana5, hayMetasSemanales ? metasSemanales : null);
+            switch (numeroSemanaDelMes)
+            {
+                case 1: if (!s1.Any(vm => vm.Meta.IdMetaIndividual == viewModel.Meta.IdMetaIndividual)) s1.Add(viewModel); break;
+                case 2: if (!s2.Any(vm => vm.Meta.IdMetaIndividual == viewModel.Meta.IdMetaIndividual)) s2.Add(viewModel); break;
+                case 3: if (!s3.Any(vm => vm.Meta.IdMetaIndividual == viewModel.Meta.IdMetaIndividual)) s3.Add(viewModel); break;
+                case 4: if (!s4.Any(vm => vm.Meta.IdMetaIndividual == viewModel.Meta.IdMetaIndividual)) s4.Add(viewModel); break;
+                case 5: if (!s5.Any(vm => vm.Meta.IdMetaIndividual == viewModel.Meta.IdMetaIndividual)) s5.Add(viewModel); break;
+                default:
+                    Console.WriteLine($"Warning: Número de semana ({numeroSemanaDelMes}) inválido para meta ID {viewModel.Meta.IdMetaIndividual}. No se asignó a pestaña semanal.");
+                    break;
+            }
         }
 
-        private void BindRepeaterSemana(Repeater rpt, Panel pnlEmpty, List<MetaIndividualInfo> data)
+        private void BindRepeaterSemanaConViewModel(Repeater rpt, Panel pnlEmpty, List<MetaIndividualInfoViewModel> data)
         {
-            bool hasData = (data != null && data.Count > 0);
-            rpt.DataSource = data;
+            var dataToShow = data.Distinct(new MetaIndividualViewModelComparer()).ToList();
+            bool hasData = (dataToShow != null && dataToShow.Any());
+
+            rpt.DataSource = dataToShow.OrderBy(vm => vm.Meta.EsFinalizable == true && vm.Meta.FechaFinal.HasValue ? vm.Meta.FechaFinal.Value : DateTime.MaxValue)
+                                     .ThenBy(vm => vm.Meta.Descripcion);
             rpt.DataBind();
             if (pnlEmpty != null) pnlEmpty.Visible = !hasData;
         }
 
-        private int GetWeekOfMonth(DateTime date,int Semana) // No usado actualmente, pero podría ser útil
+        public class MetaIndividualViewModelComparer : IEqualityComparer<MetaIndividualInfoViewModel>
         {
-            DateTime firstOfMonth = new DateTime(date.Year, date.Month, Semana);
-            int firstDayOfWeek = ((int)firstOfMonth.DayOfWeek + 6) % 7;
-            int weekNum = (date.Day + firstDayOfWeek - 1) / 7 + 1;
-            return Math.Min(weekNum, 5);
+            public bool Equals(MetaIndividualInfoViewModel x, MetaIndividualInfoViewModel y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null || y is null) return false;
+                return x.Meta.IdMetaIndividual == y.Meta.IdMetaIndividual;
+            }
+
+            public int GetHashCode(MetaIndividualInfoViewModel obj)
+            {
+                return obj.Meta.IdMetaIndividual.GetHashCode();
+            }
+        }
+
+        public int GetWeekOfMonth(DateTime date)
+        {
+            DateTime firstDayOfMonth = new DateTime(date.Year, date.Month, 1);
+            DayOfWeek firstDayOfWeekCulture = CultureInfo.CurrentCulture.DateTimeFormat.FirstDayOfWeek;
+            int dayOfWeekOfFirstDayOfMonth = (int)firstDayOfMonth.DayOfWeek;
+            int firstDayOffset = (dayOfWeekOfFirstDayOfMonth - (int)firstDayOfWeekCulture + 7) % 7;
+            int weekNumber = (date.Day + firstDayOffset - 1) / 7 + 1;
+            return Math.Min(weekNumber, 5);
         }
 
         private void MostrarMensaje(string texto, bool esExito)
@@ -164,8 +280,6 @@ namespace Gestor_Desempeno
             }
         }
 
-
-
         [WebMethod(EnableSession = true)]
         public static object GetRespuestaDetalles(int metaId, bool esFinalizable, string codigoSemanaDeLaPestana)
         {
@@ -178,7 +292,7 @@ namespace Gestor_Desempeno
             Desempeno paginaActual = HttpContext.Current.Handler as Desempeno;
             if (paginaActual == null)
             {
-                Console.WriteLine("Error en GetRespuestaDetalles: No se pudo obtener la instancia de la página actual (HttpContext.Current.Handler as Desempeno).");
+                Console.WriteLine("Error en GetRespuestaDetalles: No se pudo obtener la instancia de la página actual.");
                 return new { success = false, message = "Error de contexto de página para cargar documentos." };
             }
 
@@ -191,17 +305,34 @@ namespace Gestor_Desempeno
                 string descripcionMeta = metaInfo?.Descripcion ?? "Descripción de meta no encontrada.";
                 RespuestaInfo respuestaExistente = null;
 
+                // Si es finalizable, y se pasa un codigoSemanaDeLaPestana (incluyendo "0000000" para vencidas),
+                // se busca una respuesta semanal (avance).
+                // Si es finalizable y NO se pasa codigoSemanaDeLaPestana (o es null/empty),
+                // se busca la respuesta "final" (aquella sin código de semana).
                 if (esFinalizable)
                 {
-                    respuestaExistente = localRespuestaDAL.ObtenerRespuestaPorMetaId(metaId);
+                    if (!string.IsNullOrEmpty(codigoSemanaDeLaPestana))
+                    {
+                        respuestaExistente = localRespuestaDAL.ObtenerRespuestaSemanal(metaId, codigoSemanaDeLaPestana);
+                        Console.WriteLine($"GetRespuestaDetalles (Finalizable, con CodigoSemana='{codigoSemanaDeLaPestana}'): RespuestaExistente ID = {(respuestaExistente?.IdRespuesta.ToString() ?? "NULL")}");
+                    }
+                    else
+                    {
+                        // Esto es para cargar el estado de una meta que ya fue FINALIZADA (estado RESPONDIDO)
+                        // y que no tiene un CodigoSemana asociado a su respuesta final.
+                        respuestaExistente = localRespuestaDAL.ObtenerRespuestaPorMetaId(metaId);
+                        Console.WriteLine($"GetRespuestaDetalles (Finalizable, SIN CodigoSemana): RespuestaExistente ID = {(respuestaExistente?.IdRespuesta.ToString() ?? "NULL")}");
+                    }
                 }
-                else if (!string.IsNullOrEmpty(codigoSemanaDeLaPestana))
+                else if (!string.IsNullOrEmpty(codigoSemanaDeLaPestana)) // Meta semanal no finalizable
                 {
                     respuestaExistente = localRespuestaDAL.ObtenerRespuestaSemanal(metaId, codigoSemanaDeLaPestana);
+                    Console.WriteLine($"GetRespuestaDetalles (No Finalizable, con CodigoSemana='{codigoSemanaDeLaPestana}'): RespuestaExistente ID = {(respuestaExistente?.IdRespuesta.ToString() ?? "NULL")}");
                 }
+
                 string observacionGuardada = respuestaExistente?.Descripcion ?? "";
-                List<DocumentoRespuestaInfo> documentos = new List<DocumentoRespuestaInfo>();
                 string datosDocs = "";
+
                 if (respuestaExistente != null && respuestaExistente.IdRespuesta > 0)
                 {
                     try
@@ -211,168 +342,311 @@ namespace Gestor_Desempeno
                         string wsArchivador = ConfigurationManager.AppSettings["Archivador"];
                         string wsGaveta = ConfigurationManager.AppSettings["Gaveta"];
                         string wsLlave = ConfigurationManager.AppSettings["Llave"];
+                        string idCarpetaRespuestaWs = "";
+                        string nombreCarpetaWs = respuestaExistente.IdRespuesta.ToString();
 
-                        string idCarpetaRespuesta = "";
-                        
-
-                        idCarpetaRespuesta = paginaActual.vs2020.Devuelve_Ids_Gaveta_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, respuestaExistente.IdRespuesta.ToString()).Tables[0].Rows[1]["Valor"].ToString();
-                        if(idCarpetaRespuesta == "")
+                        DataSet dsCarpetaInfo = null;
+                        try
                         {
-                            idCarpetaRespuesta = paginaActual.vs2020.Insertar_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, respuestaExistente.IdRespuesta.ToString());
+                            dsCarpetaInfo = paginaActual.vs2020.Devuelve_Ids_Gaveta_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, nombreCarpetaWs);
+                        }
+                        catch (Exception exServicio)
+                        {
+                            Console.WriteLine($"GetRespuestaDetalles: Excepción llamando a Devuelve_Ids_Gaveta_Carpeta para '{nombreCarpetaWs}': {exServicio.Message}");
                         }
 
-                        DataSet dsDocumentos = paginaActual.vs2020.Lista_De_Documentos(idCarpetaRespuesta);
-
-                        if (dsDocumentos != null && dsDocumentos.Tables.Count > 0 && dsDocumentos.Tables[0].Rows.Count > 0)
+                        if (dsCarpetaInfo != null && dsCarpetaInfo.Tables.Count > 0 && dsCarpetaInfo.Tables[0].Rows.Count > 0)
                         {
-                            DataTable dtDocs = dsDocumentos.Tables[0];
-                            foreach (DataRow row in dtDocs.Rows)
+                            if (dsCarpetaInfo.Tables[0].Rows.Count > 1 && dsCarpetaInfo.Tables[0].Columns.Contains("Valor"))
                             {
+                                idCarpetaRespuestaWs = dsCarpetaInfo.Tables[0].Rows[1]["Valor"]?.ToString();
+                            }
+                            else if (dsCarpetaInfo.Tables[0].Columns.Contains("Valor"))
+                            {
+                                idCarpetaRespuestaWs = dsCarpetaInfo.Tables[0].Rows[0]["Valor"]?.ToString();
+                            }
+                            else
+                            {
+                                Console.WriteLine($"GetRespuestaDetalles: Devuelve_Ids_Gaveta_Carpeta para '{nombreCarpetaWs}' no devolvió la estructura esperada. Filas: {dsCarpetaInfo.Tables[0].Rows.Count}, Columnas: {string.Join(",", dsCarpetaInfo.Tables[0].Columns.Cast<DataColumn>().Select(c => c.ColumnName))}");
+                            }
+                            if (!string.IsNullOrEmpty(idCarpetaRespuestaWs)) Console.WriteLine($"GetRespuestaDetalles: ID de carpeta existente encontrado para '{nombreCarpetaWs}': {idCarpetaRespuestaWs}");
 
-                                string ideObj = row.Table.Columns.Contains("ide_obj") ? row["ide_obj"].ToString() : null;
-                                string desObj = row.Table.Columns.Contains("des_obj") ? row["des_obj"].ToString() : null;
-                                string extTip = row.Table.Columns.Contains("ext_tip") ? row["ext_tip"].ToString() : null;
-                                string mb = row.Table.Columns.Contains("MB") ? row["MB"].ToString() : null;
-                                string archivado = row.Table.Columns.Contains("Archivado") ? row["Archivado"].ToString() : null;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"GetRespuestaDetalles: Devuelve_Ids_Gaveta_Carpeta para '{nombreCarpetaWs}' no encontró la carpeta o devolvió un DataSet/DataTable vacío o nulo.");
+                        }
 
-                                string fechaFormateada = archivado;
-                                if (DateTime.TryParse(archivado, out DateTime fechaArch))
+                        if (string.IsNullOrEmpty(idCarpetaRespuestaWs))
+                        {
+                            Console.WriteLine($"GetRespuestaDetalles: Carpeta '{nombreCarpetaWs}' no encontrada por nombre. Intentando crearla.");
+                            try
+                            {
+                                idCarpetaRespuestaWs = paginaActual.vs2020.Insertar_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, nombreCarpetaWs);
+                                if (string.IsNullOrEmpty(idCarpetaRespuestaWs))
                                 {
-                                    fechaFormateada = fechaArch.ToString("dd/MM/yyyy HH:mm");
+                                    Console.WriteLine($"GetRespuestaDetalles: Falló la creación de la carpeta '{nombreCarpetaWs}' (Insertar_Carpeta devolvió vacío/nulo). No se pueden listar documentos.");
                                 }
-
-
-                                if (!string.IsNullOrEmpty(ideObj) && !string.IsNullOrEmpty(desObj))
+                                else
                                 {
-
-                                    datosDocs += $"Doc.aspx?num={HttpUtility.UrlEncode(ideObj)}" + "," + desObj + "|";
+                                    Console.WriteLine($"GetRespuestaDetalles: Carpeta '{nombreCarpetaWs}' creada con ID: {idCarpetaRespuestaWs}.");
                                 }
-
-
+                            }
+                            catch (Exception exCrearCarpeta)
+                            {
+                                Console.WriteLine($"GetRespuestaDetalles: Excepción llamando a Insertar_Carpeta para '{nombreCarpetaWs}': {exCrearCarpeta.Message}");
                             }
                         }
 
+                        if (!string.IsNullOrEmpty(idCarpetaRespuestaWs))
+                        {
+                            DataSet dsDocumentos = null;
+                            try
+                            {
+                                dsDocumentos = paginaActual.vs2020.Lista_De_Documentos(idCarpetaRespuestaWs);
+                            }
+                            catch (Exception exListarDocs)
+                            {
+                                Console.WriteLine($"GetRespuestaDetalles: Excepción llamando a Lista_De_Documentos para carpeta ID '{idCarpetaRespuestaWs}': {exListarDocs.Message}");
+                            }
+
+                            if (dsDocumentos != null && dsDocumentos.Tables.Count > 0 && dsDocumentos.Tables[0].Rows.Count > 0)
+                            {
+                                DataTable dtDocs = dsDocumentos.Tables[0];
+                                foreach (DataRow row in dtDocs.Rows)
+                                {
+                                    string ideObj = row.Table.Columns.Contains("ide_obj") ? row["ide_obj"]?.ToString() : null;
+                                    string desObj = row.Table.Columns.Contains("des_obj") ? row["des_obj"]?.ToString() : null;
+                                    if (!string.IsNullOrEmpty(ideObj) && !string.IsNullOrEmpty(desObj))
+                                    {
+                                        datosDocs += $"Doc.aspx?num={HttpUtility.UrlEncode(ideObj)},{HttpUtility.HtmlEncode(desObj)}|";
+                                    }
+                                }
+                                datosDocs = datosDocs.TrimEnd('|');
+                                Console.WriteLine($"GetRespuestaDetalles: Documentos encontrados para carpeta ID '{idCarpetaRespuestaWs}': {datosDocs}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"GetRespuestaDetalles: Lista_De_Documentos para carpeta ID '{idCarpetaRespuestaWs}' no devolvió documentos o la tabla estaba vacía.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"GetRespuestaDetalles: No se pudo obtener/crear un ID de carpeta para RespuestaID {respuestaExistente.IdRespuesta}. No se listarán documentos.");
+                        }
                     }
-                    catch (Exception exListaDocs)
+                    catch (Exception exBloqueDocumentosGeneral)
                     {
-                        Console.WriteLine($"Error obteniendo lista de documentos para RespuestaID {respuestaExistente.IdRespuesta}: {exListaDocs.ToString()}");
+                        Console.WriteLine($"GetRespuestaDetalles: Error general en el bloque de obtención de documentos para RespuestaID {respuestaExistente.IdRespuesta}: {exBloqueDocumentosGeneral.ToString()}");
                     }
                 }
-                datosDocs = datosDocs.Trim('|');
-
                 return new { success = true, data = new { DescripcionMeta = descripcionMeta, ObservacionGuardada = observacionGuardada, DatosDocs = datosDocs } };
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error en WebMethod GetRespuestaDetalles (MetaID: {metaId}, CodigoSemana: {codigoSemanaDeLaPestana}): {ex.ToString()}");
-                return new { success = false, message = "Error al obtener detalles." };
+                Console.WriteLine($"Error CRÍTICO en WebMethod GetRespuestaDetalles (MetaID: {metaId}, CodigoSemana: {codigoSemanaDeLaPestana}): {ex.ToString()}");
+                return new { success = false, message = "Error crítico al obtener detalles de la respuesta." };
             }
         }
 
-        // Evento Click del botón de guardar en el Modal (Postback Completo)
-        protected void btModalGuardar_Click(object sender, EventArgs e)
+        protected void btModalGuardarAvance_Click(object sender, EventArgs e)
         {
             string currentUser = Session["UsuarioID"]?.ToString();
-            if (string.IsNullOrEmpty(currentUser))
-            {
-                MostrarMensaje("Error: Sesión de usuario no encontrada.", false);
-                // Considerar recargar o redirigir
-                return;
-            }
+            if (string.IsNullOrEmpty(currentUser)) { MostrarMensaje("Error: Sesión de usuario no encontrada.", false); return; }
 
             try
             {
                 int metaId = Convert.ToInt32(hfSelectedMetaId.Value);
-                bool esFinalizable = Convert.ToBoolean(hfSelectedIsFinalizable.Value);
+                string observacion = modalObservacion.Value;
+                string nombreArchivoParaBd = fileUploadControl.HasFile ? fileUploadControl.FileName : null;
+                string pestanaActivaValor = hfActiveWeekNumber.Value; // "overdue", "1", "2", ...
+                string codigoSemanaParaGuardar = null;
+
+                if (pestanaActivaValor == "overdue")
+                {
+                    codigoSemanaParaGuardar = "0000000"; // Código especial para avances de metas vencidas
+                    Console.WriteLine($"GuardarAvance: Meta Vencida. CodigoSemana a usar: {codigoSemanaParaGuardar}");
+                }
+                else if (int.TryParse(pestanaActivaValor, out int numSemana) && numSemana >= 1 && numSemana <= 5)
+                {
+                    codigoSemanaParaGuardar = $"{numSemana}{DateTime.Now:MM}{DateTime.Now.Year}";
+                    Console.WriteLine($"GuardarAvance: Meta en Semana {numSemana}. CodigoSemana a usar: {codigoSemanaParaGuardar}");
+                }
+                else
+                {
+                    // Fallback si hfActiveWeekNumber tiene un valor inesperado (no es "overdue" ni un número 1-5)
+                    // Esto podría indicar un error en la lógica de JS o un estado no previsto.
+                    // Por seguridad, podríamos no guardar o usar un código de semana basado en la fecha actual.
+                    // Optaremos por usar la semana actual del mes como fallback, pero registrando una advertencia.
+                    int semanaActualCalculada = GetWeekOfMonth(DateTime.Now);
+                    codigoSemanaParaGuardar = $"{semanaActualCalculada}{DateTime.Now:MM}{DateTime.Now.Year}";
+                    Console.WriteLine($"Warning: GuardarAvance con valor de pestaña activa inesperado ('{pestanaActivaValor}'). Usando semana actual calculada: {codigoSemanaParaGuardar}");
+                    MostrarMensaje("Advertencia: No se pudo determinar la pestaña activa con claridad, avance asociado a la semana actual.", false); // false para que sea 'danger'
+                }
+
+                int respuestaId = respuestaDAL.GuardarRespuesta(metaId, observacion,
+                                                ID_ESTADO_ACTIVO_SEMANAL,
+                                                true,
+                                                nombreArchivoParaBd,
+                                                codigoSemanaParaGuardar);
+
+                if (respuestaId > 0)
+                {
+                    bool archivoOk = true;
+                    if (fileUploadControl.HasFile) archivoOk = GuardarDocumentoServicioWeb(respuestaId);
+                    MostrarMensaje(archivoOk ? "Avance guardado correctamente." : "Avance guardado, pero hubo un error al guardar el archivo adjunto.", archivoOk);
+                    hdGuardado.Value = "true";
+                }
+                else
+                {
+                    MostrarMensaje("No se pudo guardar el avance (DAL).", false);
+                }
+                LoadMetasUsuario(currentUser);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en btModalGuardarAvance_Click (MetaID: {hfSelectedMetaId.Value}): {ex.ToString()}");
+                MostrarMensaje("Ocurrió un error en el servidor al guardar el avance.", false);
+            }
+        }
+
+        protected void btModalFinalizarMeta_Click(object sender, EventArgs e)
+        {
+            string currentUser = Session["UsuarioID"]?.ToString();
+            if (string.IsNullOrEmpty(currentUser)) { MostrarMensaje("Error: Sesión de usuario no encontrada.", false); return; }
+
+            try
+            {
+                int metaId = Convert.ToInt32(hfSelectedMetaId.Value);
                 string observacion = modalObservacion.Value;
                 string nombreArchivoParaBd = fileUploadControl.HasFile ? fileUploadControl.FileName : null;
 
                 int respuestaId = respuestaDAL.GuardarRespuesta(metaId, observacion,
-                                                                esFinalizable ? ID_ESTADO_RESPONDIDO : ID_ESTADO_ACTIVO_SEMANAL,
-                                                                esFinalizable, nombreArchivoParaBd,hfActiveWeekNumber.Value);
+                                                ID_ESTADO_RESPONDIDO,
+                                                true,
+                                                nombreArchivoParaBd,
+                                                null); // Para metas finalizadas, CodigoSemana es NULL
 
                 if (respuestaId > 0)
                 {
-                    bool archivoGuardadoExitosamente = true; // Asumir éxito si no hay archivo
-                    if (fileUploadControl.HasFile)
-                    {
-                        archivoGuardadoExitosamente = GuardarDocumentoServicioWeb(respuestaId);
-                    }
-
-                    if (archivoGuardadoExitosamente)
-                    {
-                        MostrarMensaje("Respuesta guardada correctamente.", true);
-                        hdGuardado.Value = "true"; // Para que JS pueda mostrar mensaje si es necesario
-                    }
-                    else
-                    {
-                        MostrarMensaje("Respuesta guardada, pero hubo un error al guardar el archivo adjunto.", false);
-                    }
-
-                    // Refrescar datos en la página
-                    LoadMetasUsuario(currentUser);
-                    // ScriptManager.RegisterStartupScript(this, GetType(), "closeModal", "if(window.respuestaModal) { window.respuestaModal.hide(); }", true); // Opcional si el modal no se cierra solo
+                    bool archivoOk = true;
+                    if (fileUploadControl.HasFile) archivoOk = GuardarDocumentoServicioWeb(respuestaId);
+                    MostrarMensaje(archivoOk ? "Meta finalizada correctamente." : "Meta finalizada, pero hubo un error al guardar el archivo adjunto.", archivoOk);
+                    hdGuardado.Value = "true";
                 }
                 else
                 {
-                    MostrarMensaje("No se pudo guardar la respuesta (DAL).", false);
+                    MostrarMensaje("No se pudo finalizar la meta (DAL).", false);
                 }
+                LoadMetasUsuario(currentUser);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error en btModalGuardar_Click (MetaID: {hfSelectedMetaId.Value}): {ex.ToString()}");
-                MostrarMensaje("Ocurrió un error en el servidor al guardar.", false);
+                Console.WriteLine($"Error en btModalFinalizarMeta_Click (MetaID: {hfSelectedMetaId.Value}): {ex.ToString()}");
+                MostrarMensaje("Ocurrió un error en el servidor al finalizar la meta.", false);
             }
-            // El UpdatePanel se refrescará. Si quieres un refresh completo, usa Response.Redirect.
         }
 
-        // Método para guardar el documento usando el servicio web
-        // Renombrado para claridad, ya que el anterior se llamaba GuardarDocumento
+        protected void btModalGuardarSemanal_Click(object sender, EventArgs e)
+        {
+            string currentUser = Session["UsuarioID"]?.ToString();
+            if (string.IsNullOrEmpty(currentUser)) { MostrarMensaje("Error: Sesión de usuario no encontrada.", false); return; }
+
+            try
+            {
+                int metaId = Convert.ToInt32(hfSelectedMetaId.Value);
+                string observacion = modalObservacion.Value;
+                string nombreArchivoParaBd = fileUploadControl.HasFile ? fileUploadControl.FileName : null;
+                string numeroSemanaPestanaActiva = hfActiveWeekNumber.Value;
+                string codigoSemanaParaGuardar = null;
+
+                if (int.TryParse(numeroSemanaPestanaActiva, out int numSemana) && numSemana >= 1 && numSemana <= 5)
+                {
+                    codigoSemanaParaGuardar = $"{numSemana}{DateTime.Now:MM}{DateTime.Now.Year}";
+                }
+                else
+                {
+                    MostrarMensaje("Error: No se pudo determinar el código de semana para la meta semanal (valor de pestaña inválido: '" + numeroSemanaPestanaActiva + "').", false);
+                    return;
+                }
+
+                int respuestaId = respuestaDAL.GuardarRespuesta(metaId, observacion,
+                                                ID_ESTADO_ACTIVO_SEMANAL,
+                                                false,
+                                                nombreArchivoParaBd,
+                                                codigoSemanaParaGuardar);
+
+                if (respuestaId > 0)
+                {
+                    bool archivoOk = true;
+                    if (fileUploadControl.HasFile) archivoOk = GuardarDocumentoServicioWeb(respuestaId);
+                    MostrarMensaje(archivoOk ? "Respuesta semanal guardada correctamente." : "Respuesta guardada, pero hubo un error con el archivo.", archivoOk);
+                    hdGuardado.Value = "true";
+                }
+                else
+                {
+                    MostrarMensaje("No se pudo guardar la respuesta semanal (DAL).", false);
+                }
+                LoadMetasUsuario(currentUser);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en btModalGuardarSemanal_Click (MetaID: {hfSelectedMetaId.Value}): {ex.ToString()}");
+                MostrarMensaje("Ocurrió un error en el servidor al guardar la respuesta semanal.", false);
+            }
+        }
+
         public bool GuardarDocumentoServicioWeb(int idRespuesta)
         {
             if (!fileUploadControl.HasFile)
             {
                 return true;
             }
-
             bool bl = false;
             try
             {
                 string nomDoct = fileUploadControl.FileName;
                 byte[] fileBytes = fileUploadControl.FileBytes;
-
                 string wsUsuario = ConfigurationManager.AppSettings["Usuario"];
                 string wsClave = ConfigurationManager.AppSettings["Clave"];
                 string wsArchivador = ConfigurationManager.AppSettings["Archivador"];
                 string wsGaveta = ConfigurationManager.AppSettings["Gaveta"];
-                string wsLlave = ConfigurationManager.AppSettings["Llave"]; // Llave de la carpeta principal
-                string idCarpetaRespuesta = idRespuesta.ToString(); // Nombre de la subcarpeta específica
+                string wsLlave = ConfigurationManager.AppSettings["Llave"];
+                string nombreCarpetaWs = idRespuesta.ToString();
+                string idRealDeLaCarpeta = "";
 
-                string resultadoArchivar = "";
-           
-                string carpetaDestinoParaArchivar; // Esta será la ID de la carpeta donde realmente se archiva.
+                DataSet dsCarpetaInfo = vs2020.Devuelve_Ids_Gaveta_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, nombreCarpetaWs);
 
-                if (vs2020.Existe_Carpeta(wsArchivador, wsGaveta, wsLlave, idRespuesta.ToString()))
+                if (dsCarpetaInfo != null && dsCarpetaInfo.Tables.Count > 0 && dsCarpetaInfo.Tables[0].Rows.Count > 0)
                 {
-
-                    carpetaDestinoParaArchivar = vs2020.Devuelve_Ids_Gaveta_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, idRespuesta.ToString()).Tables[0].Rows[1]["Valor"].ToString();
+                    if (dsCarpetaInfo.Tables[0].Rows.Count > 1 && dsCarpetaInfo.Tables[0].Columns.Contains("Valor"))
+                    { // Original assumption
+                        idRealDeLaCarpeta = dsCarpetaInfo.Tables[0].Rows[1]["Valor"]?.ToString();
+                    }
+                    else if (dsCarpetaInfo.Tables[0].Columns.Contains("Valor"))
+                    { // Check first row if only one
+                        idRealDeLaCarpeta = dsCarpetaInfo.Tables[0].Rows[0]["Valor"]?.ToString();
+                    }
                 }
-                else
+
+                if (string.IsNullOrEmpty(idRealDeLaCarpeta))
                 {
-
-                    carpetaDestinoParaArchivar = vs2020.Insertar_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, idCarpetaRespuesta);
+                    idRealDeLaCarpeta = vs2020.Insertar_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, nombreCarpetaWs);
                 }
 
-                // Ahora archivamos usando la carpetaDestinoParaArchivar (que es el ID de la carpeta específica de la respuesta)
-                resultadoArchivar = vs2020.ArchivarDocumentoByte(wsUsuario, wsClave, wsArchivador, wsGaveta, carpetaDestinoParaArchivar, nomDoct, fileBytes);
-
-                if (resultadoArchivar == "") // O una mejor verificación del éxito
+                if (string.IsNullOrEmpty(idRealDeLaCarpeta))
+                {
+                    Console.WriteLine($"Error: No se pudo obtener ni crear el ID de la carpeta de destino para RespuestaID {idRespuesta}. Nombre: {nombreCarpetaWs}");
+                    return false;
+                }
+                string resultadoArchivar = vs2020.ArchivarDocumentoByte(wsUsuario, wsClave, wsArchivador, wsGaveta, idRealDeLaCarpeta, nomDoct, fileBytes);
+                if (string.IsNullOrEmpty(resultadoArchivar) || resultadoArchivar.ToUpper().Contains("EXITO"))
                 {
                     bl = true;
                 }
                 else
                 {
-                    Console.WriteLine($"Error de ArchivarDocumentoByte: {resultadoArchivar}");
+                    Console.WriteLine($"Error de ArchivarDocumentoByte para RespuestaID {idRespuesta} en CarpetaID {idRealDeLaCarpeta}: {resultadoArchivar}");
                     bl = false;
                 }
             }
@@ -383,99 +657,21 @@ namespace Gestor_Desempeno
             }
             return bl;
         }
+    }
 
-
-        [WebMethod(EnableSession = true)]
-        public static object GuardarRespuesta(int metaId, string observacion, string nombreArchivo, bool esFinalizable,int numSemana)
-        {
-            string currentUser = HttpContext.Current.Session["UsuarioID"]?.ToString();
-            if (string.IsNullOrEmpty(currentUser))
-            {
-                return new { success = false, message = "Error: Sesión de usuario no encontrada.", redirectTo = "" };
-            }
-
-            Desempeno paginaActual = HttpContext.Current.Handler as Desempeno;
-            if (paginaActual == null)
-            {
-                RespuestaDAL localRespuestaDAL = new RespuestaDAL();
-                System.Diagnostics.Debug.WriteLine("WebMethod GuardarRespuesta: Instanciando RespuestaDAL localmente.");
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("WebMethod GuardarRespuesta: Usando instancia de página para DAL.");
-            }
-
-            RespuestaDAL dalParaUsar = paginaActual?.respuestaDAL ?? new RespuestaDAL();
-
-            string codigoSemanaParaGuardar = null;
-            if (!esFinalizable)
-            {
-                if (numSemana > 0 && numSemana <= 5) // Usando el nuevo nombre del parámetro: numSemana
-                {
-                    // Construir el CodigoSemana usando numSemana y el mes/año actual
-                    string monthStr = DateTime.Now.ToString("MM");
-                    string yearStr = DateTime.Now.Year.ToString();
-                    codigoSemanaParaGuardar = $"{numSemana}{monthStr}{yearStr}"; // Usando numSemana
-                    System.Diagnostics.Debug.WriteLine($"WebMethod GuardarRespuesta: Usando numSemana '{numSemana}' para generar CodigoSemana '{codigoSemanaParaGuardar}'.");
-                }
-                else
-                {
-                    // Fallback si numSemana no es válido, usa la lógica de la fecha actual
-                    codigoSemanaParaGuardar = RespuestaDALExtensions.GetCodigoSemana_WMMYYYY_Static(DateTime.Now,numSemana);
-                    System.Diagnostics.Debug.WriteLine($"WebMethod GuardarRespuesta: numSemana ('{numSemana}') no válido, usando CodigoSemana por defecto '{codigoSemanaParaGuardar}'.");
-                }
-            }
-
-            try
-            {
-                int estadoDestino = esFinalizable ? ID_ESTADO_RESPONDIDO : ID_ESTADO_ACTIVO_SEMANAL;
-
-                // Llamada al método original de la DAL.
-                // RECUERDA: Si quieres forzar el uso de 'codigoSemanaParaGuardar', 
-                // debes modificar el método en RespuestaDAL para aceptar este parámetro.
-                int respuestaId = dalParaUsar.GuardarRespuesta(metaId, observacion, estadoDestino, esFinalizable, nombreArchivo /*, codigoSemanaParaGuardar */);
-
-                if (respuestaId > 0)
-                {
-                    return new { success = true, message = "Respuesta guardada (vía WebMethod).", codigoSemana = codigoSemanaParaGuardar, redirectTo = "Desempeno.aspx" };
-                }
-                else
-                {
-                    return new { success = false, message = "No se pudo guardar la respuesta (DAL).", redirectTo = "" };
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error en WebMethod GuardarRespuesta (MetaID: {metaId}, numSemana: {numSemana}): {ex.ToString()}"); // Usando numSemana en el log
-                return new { success = false, message = "Ocurrió un error en el servidor al guardar.", redirectTo = "" };
-            }
-        }
-
-
-
-
-    } // Fin clase Desempeno
-
-
-    // Clase de extensión (si no existe ya en tu proyecto)
     public static class RespuestaDALExtensions
     {
-        private static int GetWeekOfMonth_Static(DateTime date,int Semana)
+        private static int GetWeekOfMonth_Static(DateTime date, int diaReferenciaParaCalculoSemana = 1)
         {
-            DateTime firstOfMonth = new DateTime(date.Year, date.Month, Semana);
-            // DayOfWeek.Sunday = 0, Monday = 1, ..., Saturday = 6
-            // Queremos que Lunes sea el primer día de la semana (0) y Domingo el último (6) para el cálculo.
-            // O, si la semana empieza en Domingo, ajustar. CultureInfo.CurrentCulture.DateTimeFormat.FirstDayOfWeek
-            int firstDayOfWeek = ((int)firstOfMonth.DayOfWeek + 6) % 7; // Lunes = 0, Martes = 1 ... Domingo = 6
+            DateTime firstOfMonth = new DateTime(date.Year, date.Month, diaReferenciaParaCalculoSemana);
+            int firstDayOfWeek = ((int)firstOfMonth.DayOfWeek + 6) % 7;
             int weekNum = (date.Day + firstDayOfWeek - 1) / 7 + 1;
-            return Math.Min(weekNum, 5); // Limitar a 5 semanas máximo
+            return Math.Min(weekNum, 5);
         }
-        public static string GetCodigoSemana_WMMYYYY_Static(DateTime fecha, int Semana)
+        public static string GetCodigoSemana_WMMYYYY_Static(DateTime fecha, int numeroSemanaDelMes)
         {
-            // No depende de CultureInfo para el número de semana del mes, usa la lógica GetWeekOfMonth_Static
-            int weekOfMonth = GetWeekOfMonth_Static(fecha, Semana);
-            string monthStr = fecha.ToString("MM"); // Formato MM (01, 02, ..., 12)
-            return $"{weekOfMonth}{monthStr}{fecha.Year}";
+            string monthStr = fecha.ToString("MM");
+            return $"{numeroSemanaDelMes}{monthStr}{fecha.Year}";
         }
     }
 }
