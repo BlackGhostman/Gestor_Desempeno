@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DiscoveryClientResultsFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Results>
+    <DiscoveryClientResult referenceType="System.Web.Services.Discovery.DiscoveryDocumentReference" url="http://gestiones-administrativas.curridabat.go.cr/WS-RecursosHumanos.asmx?disco" filename="WS-RecursosHumanos.disco" />
+    <DiscoveryClientResult referenceType="System.Web.Services.Discovery.ContractReference" url="http://gestiones-administrativas.curridabat.go.cr/WS-RecursosHumanos.asmx?wsdl" filename="WS-RecursosHumanos.wsdl" />
+  </Results>
+</DiscoveryClientResultsFile>

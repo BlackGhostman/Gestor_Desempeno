@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://tempuri.org/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+      <s:element name="enviarReutilizado">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="asunto" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mensaje" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="receptor" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="emisor" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailuser" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailpwd" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailserver" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailport" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="ssl" type="s:boolean" />
+            <s:element minOccurs="1" maxOccurs="1" name="Html" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="enviarReutilizadoResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="enviarReutilizadoResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="enviarCorreoDefault">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="asunto" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mensaje" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="receptor" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="enviarCorreoDefaultResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="enviarCorreoDefaultResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="EnviarCorreoPlano">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="asunto" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mensaje" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="receptor" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="emisor" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailuser" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailpwd" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailserver" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailport" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="ssl" type="s:boolean" />
+            <s:element minOccurs="1" maxOccurs="1" name="Html" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="EnviarCorreoPlanoResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="EnviarCorreoPlanoResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="EnviarCorreoHtml">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="asunto" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mensaje" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="receptor" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="emisor" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailuser" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailpwd" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailserver" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailport" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="ssl" type="s:boolean" />
+            <s:element minOccurs="1" maxOccurs="1" name="Html" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="EnviarCorreoHtmlResponse">
+        <s:complexType />
+      </s:element>
+      <s:element name="enviarCorreo">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="adjunto" type="s:base64Binary" />
+            <s:element minOccurs="0" maxOccurs="1" name="nombreAtach" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="asunto" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mensaje" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="receptor" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="emisor" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailuser" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailpwd" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailserver" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailport" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="ssl" type="s:boolean" />
+            <s:element minOccurs="1" maxOccurs="1" name="Html" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="enviarCorreoResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="enviarCorreoResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="enviarCorreoVariosAdj">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="adjunto" type="tns:ArrayOfBase64Binary" />
+            <s:element minOccurs="0" maxOccurs="1" name="nombreAtach" type="tns:ArrayOfString" />
+            <s:element minOccurs="0" maxOccurs="1" name="asunto" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mensaje" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="receptor" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="emisor" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailuser" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailpwd" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailserver" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="mailport" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="ssl" type="s:boolean" />
+            <s:element minOccurs="1" maxOccurs="1" name="Html" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfBase64Binary">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="base64Binary" nillable="true" type="s:base64Binary" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfString">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="string" nillable="true" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="enviarCorreoVariosAdjResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="enviarCorreoVariosAdjResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="enviarReutilizadoSoapIn">
+    <wsdl:part name="parameters" element="tns:enviarReutilizado" />
+  </wsdl:message>
+  <wsdl:message name="enviarReutilizadoSoapOut">
+    <wsdl:part name="parameters" element="tns:enviarReutilizadoResponse" />
+  </wsdl:message>
+  <wsdl:message name="enviarCorreoDefaultSoapIn">
+    <wsdl:part name="parameters" element="tns:enviarCorreoDefault" />
+  </wsdl:message>
+  <wsdl:message name="enviarCorreoDefaultSoapOut">
+    <wsdl:part name="parameters" element="tns:enviarCorreoDefaultResponse" />
+  </wsdl:message>
+  <wsdl:message name="EnviarCorreoPlanoSoapIn">
+    <wsdl:part name="parameters" element="tns:EnviarCorreoPlano" />
+  </wsdl:message>
+  <wsdl:message name="EnviarCorreoPlanoSoapOut">
+    <wsdl:part name="parameters" element="tns:EnviarCorreoPlanoResponse" />
+  </wsdl:message>
+  <wsdl:message name="EnviarCorreoHtmlSoapIn">
+    <wsdl:part name="parameters" element="tns:EnviarCorreoHtml" />
+  </wsdl:message>
+  <wsdl:message name="EnviarCorreoHtmlSoapOut">
+    <wsdl:part name="parameters" element="tns:EnviarCorreoHtmlResponse" />
+  </wsdl:message>
+  <wsdl:message name="enviarCorreoSoapIn">
+    <wsdl:part name="parameters" element="tns:enviarCorreo" />
+  </wsdl:message>
+  <wsdl:message name="enviarCorreoSoapOut">
+    <wsdl:part name="parameters" element="tns:enviarCorreoResponse" />
+  </wsdl:message>
+  <wsdl:message name="enviarCorreoVariosAdjSoapIn">
+    <wsdl:part name="parameters" element="tns:enviarCorreoVariosAdj" />
+  </wsdl:message>
+  <wsdl:message name="enviarCorreoVariosAdjSoapOut">
+    <wsdl:part name="parameters" element="tns:enviarCorreoVariosAdjResponse" />
+  </wsdl:message>
+  <wsdl:portType name="WebService1Soap">
+    <wsdl:operation name="enviarReutilizado">
+      <wsdl:input message="tns:enviarReutilizadoSoapIn" />
+      <wsdl:output message="tns:enviarReutilizadoSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="enviarCorreoDefault">
+      <wsdl:input message="tns:enviarCorreoDefaultSoapIn" />
+      <wsdl:output message="tns:enviarCorreoDefaultSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="EnviarCorreoPlano">
+      <wsdl:input message="tns:EnviarCorreoPlanoSoapIn" />
+      <wsdl:output message="tns:EnviarCorreoPlanoSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="EnviarCorreoHtml">
+      <wsdl:input message="tns:EnviarCorreoHtmlSoapIn" />
+      <wsdl:output message="tns:EnviarCorreoHtmlSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="enviarCorreo">
+      <wsdl:input message="tns:enviarCorreoSoapIn" />
+      <wsdl:output message="tns:enviarCorreoSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="enviarCorreoVariosAdj">
+      <wsdl:input message="tns:enviarCorreoVariosAdjSoapIn" />
+      <wsdl:output message="tns:enviarCorreoVariosAdjSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="WebService1Soap" type="tns:WebService1Soap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="enviarReutilizado">
+      <soap:operation soapAction="http://tempuri.org/enviarReutilizado" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="enviarCorreoDefault">
+      <soap:operation soapAction="http://tempuri.org/enviarCorreoDefault" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="EnviarCorreoPlano">
+      <soap:operation soapAction="http://tempuri.org/EnviarCorreoPlano" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="EnviarCorreoHtml">
+      <soap:operation soapAction="http://tempuri.org/EnviarCorreoHtml" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="enviarCorreo">
+      <soap:operation soapAction="http://tempuri.org/enviarCorreo" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="enviarCorreoVariosAdj">
+      <soap:operation soapAction="http://tempuri.org/enviarCorreoVariosAdj" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="WebService1Soap12" type="tns:WebService1Soap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="enviarReutilizado">
+      <soap12:operation soapAction="http://tempuri.org/enviarReutilizado" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="enviarCorreoDefault">
+      <soap12:operation soapAction="http://tempuri.org/enviarCorreoDefault" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="EnviarCorreoPlano">
+      <soap12:operation soapAction="http://tempuri.org/EnviarCorreoPlano" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="EnviarCorreoHtml">
+      <soap12:operation soapAction="http://tempuri.org/EnviarCorreoHtml" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="enviarCorreo">
+      <soap12:operation soapAction="http://tempuri.org/enviarCorreo" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="enviarCorreoVariosAdj">
+      <soap12:operation soapAction="http://tempuri.org/enviarCorreoVariosAdj" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="WebService1">
+    <wsdl:port name="WebService1Soap" binding="tns:WebService1Soap">
+      <soap:address location="http://server-iis/wsCorreo/WebService1.asmx" />
+    </wsdl:port>
+    <wsdl:port name="WebService1Soap12" binding="tns:WebService1Soap12">
+      <soap12:address location="http://server-iis/wsCorreo/WebService1.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

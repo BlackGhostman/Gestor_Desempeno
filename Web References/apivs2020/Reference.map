@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<DiscoveryClientResultsFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Results>
+    <DiscoveryClientResult referenceType="System.Web.Services.Discovery.ContractReference" url="http://api-vs2020.curridabat.go.cr:61248/wsapi.asmx?wsdl" filename="wsapi.wsdl" />
+    <DiscoveryClientResult referenceType="System.Web.Services.Discovery.DiscoveryDocumentReference" url="http://api-vs2020.curridabat.go.cr:61248/wsapi.asmx?disco" filename="wsapi.disco" />
+  </Results>
+</DiscoveryClientResultsFile>
