@@ -69,22 +69,22 @@ namespace Gestor_Desempeno
         protected global::System.Web.UI.WebControls.Literal litFeedback;
 
         /// <summary>
-        /// Control rptMetasFinalizables.
+        /// Control rptMetasVencidas.
         /// </summary>
         /// <remarks>
         /// Campo generado automáticamente.
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Repeater rptMetasFinalizables;
+        protected global::System.Web.UI.WebControls.Repeater rptMetasVencidas;
 
         /// <summary>
-        /// Control pnlEmptyMetasFinalizables.
+        /// Control pnlEmptyMetasVencidas.
         /// </summary>
         /// <remarks>
         /// Campo generado automáticamente.
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel pnlEmptyMetasFinalizables;
+        protected global::System.Web.UI.WebControls.Panel pnlEmptyMetasVencidas;
 
         /// <summary>
         /// Control rptSemana1.
@@ -195,12 +195,48 @@ namespace Gestor_Desempeno
         protected global::System.Web.UI.WebControls.FileUpload fileUploadControl;
 
         /// <summary>
-        /// Control btModalGuardar.
+        /// Control pnlBotonesMetaFinalizable.
         /// </summary>
         /// <remarks>
         /// Campo generado automáticamente.
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btModalGuardar;
+        protected global::System.Web.UI.WebControls.Panel pnlBotonesMetaFinalizable;
+
+        /// <summary>
+        /// Control btModalGuardarAvance.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btModalGuardarAvance;
+
+        /// <summary>
+        /// Control btModalFinalizarMeta.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btModalFinalizarMeta;
+
+        /// <summary>
+        /// Control pnlBotonMetaSemanal.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel pnlBotonMetaSemanal;
+
+        /// <summary>
+        /// Control btModalGuardarSemanal.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btModalGuardarSemanal;
     }
 }

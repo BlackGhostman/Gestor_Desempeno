@@ -20,52 +20,33 @@ namespace Gestor_Desempeno
         public string NombreArchivo { get; set; } // For future use, not a DB column
     }
 
-   
 
     public class RespuestaDAL
     {
         private string GetConnectionString()
         {
-            // Ensure this connection string name matches your Web.config
             return ConfigurationManager.ConnectionStrings["ObjetivosConnection"].ConnectionString;
         }
 
-        // Generates week code in WMMYYYY format (e.g., 2052025 for Week 2, May 2025)
-        private string GetCodigoSemana_WMMYYYY(int anio,int mes,int Semana)
+        // Constantes para los estados (es mejor tenerlas definidas en un solo lugar, pero las replico aquí para claridad del ejemplo)
+        private const int ID_ESTADO_ACTIVO_SEMANAL_DAL = 9; // Estado para avance o respuesta semanal activa
+        private const int ID_ESTADO_RESPONDIDO_DAL = 11;    // Estado para meta finalizada
+
+        // Tu método GetCodigoSemana_WMMYYYY (parece correcto, pero no se usará dentro de GuardarRespuesta si el parámetro ya viene formateado)
+        private string GetCodigoSemana_WMMYYYY(int anio, int mes, int semanaNum)
         {
-            string mesi = "";
-            if(mes < 10)
-            {
-                mesi = "0" + mes.ToString();
-            }
-            else
-            {
-                mesi = mes.ToString();
-            }
-            int weekOfMonth = Semana;
-            string monthStr = mesi; // Format month with leading zero
-            return $"{weekOfMonth}{monthStr}{anio}";
+            string mesStr = mes < 10 ? "0" + mes.ToString() : mes.ToString();
+            return $"{semanaNum}{mesStr}{anio}";
         }
 
-        // Helper to get week of month (approximate, starts week on Monday)
-        private int GetWeekOfMonth(DateTime date)
-        {
-            DateTime firstOfMonth = new DateTime(date.Year, date.Month, 1);
-            int firstDayOfWeek = ((int)firstOfMonth.DayOfWeek + 6) % 7; // Monday = 0
-            int weekNum = (date.Day + firstDayOfWeek - 1) / 7 + 1;
-            return Math.Min(weekNum, 5); // Cap at week 5
-        }
-
-        // Method to get a specific weekly response
         public RespuestaInfo ObtenerRespuestaSemanal(int idMetaIndividual, string codigoSemana)
         {
             RespuestaInfo respuesta = null;
             if (string.IsNullOrEmpty(codigoSemana)) return null;
 
-            // NombreArchivo is NOT selected as it's not in the DB
             string query = @"SELECT Id_Respuesta, Id_Meta_Individual, Descripcion, Fecha_Entregado, Id_Detalle_Estado, Codigo_Semana
-                             FROM dbo.Respuesta
-                             WHERE Id_Meta_Individual = @IdMetaIndividual AND Codigo_Semana = @CodigoSemana";
+                         FROM dbo.Respuesta
+                         WHERE Id_Meta_Individual = @IdMetaIndividual AND Codigo_Semana = @CodigoSemana";
 
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {
@@ -88,131 +69,26 @@ namespace Gestor_Desempeno
                                     FechaEntregado = reader["Fecha_Entregado"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha_Entregado"]) : (DateTime?)null,
                                     IdDetalleEstado = reader["Id_Detalle_Estado"] != DBNull.Value ? Convert.ToInt32(reader["Id_Detalle_Estado"]) : (int?)null,
                                     CodigoSemana = reader["Codigo_Semana"]?.ToString()
-                                    // NombreArchivo is not mapped from DB
                                 };
                             }
                         }
                     }
-                    catch (Exception ex) { Console.WriteLine("Error en ObtenerRespuestaSemanal: " + ex.Message); }
+                    catch (Exception ex) { Console.WriteLine("Error en ObtenerRespuestaSemanal: " + ex.Message); throw; }
                 }
             }
             return respuesta;
         }
 
-
-        // Inserts or Updates a response based on whether one exists for the metaId and, for weekly, the CodigoSemana.
-        // Returns the ID of the saved response or -1 on failure.
-        public int GuardarRespuesta(int idMetaIndividual, string descripcion, int idDetalleEstadoDestino, bool esMetaFinalizable, string nombreArchivo = null, string codigoSemanaEspecifico = null)
-        {
-            int respuestaId = -1;
-            DateTime fechaEvento = DateTime.Now;
-            string codigoSemanaParaGuardar = null; // This will be NULL for finalizable, or WMMYYYY for weekly
-            RespuestaInfo respuestaExistente = null;
-
-            // Determine logic based on meta type
-            if (esMetaFinalizable)
-            {
-                // Finalizable: Check if *any* response exists for this meta
-                // CodigoSemana will be NULL for these.
-                respuestaExistente = ObtenerRespuestaPorMetaId(idMetaIndividual); // This method should ideally fetch where CodigoSemana IS NULL
-                codigoSemanaParaGuardar = null;
-            }
-            else
-            {
-                // Weekly: Calculate week code and check for response *for that specific week*
-                
-                codigoSemanaParaGuardar = GetCodigoSemana_WMMYYYY(fechaEvento.Year,fechaEvento.Month, Convert.ToInt32(codigoSemanaEspecifico));
-                respuestaExistente = ObtenerRespuestaSemanal(idMetaIndividual, codigoSemanaParaGuardar);
-            }
-
-            string query;
-            if (respuestaExistente != null)
-            {
-                // --- UPDATE ---
-                respuestaId = respuestaExistente.IdRespuesta;
-                query = @"UPDATE dbo.Respuesta SET
-                             Descripcion = @Descripcion,
-                             Fecha_Entregado = @FechaEntregado, -- Always update timestamp
-                             Id_Detalle_Estado = @IdDetalleEstado
-                             -- Codigo_Semana should not change on update for an existing weekly record
-                             -- NombreArchivo is not a DB column
-                          WHERE Id_Respuesta = @IdRespuesta";
-            }
-            else
-            {
-                // --- INSERT ---
-                query = @"INSERT INTO dbo.Respuesta
-                             (Id_Meta_Individual, Descripcion, Fecha_Entregado, Id_Detalle_Estado, Codigo_Semana) -- Removed NombreArchivo
-                          VALUES
-                             (@IdMetaIndividual, @Descripcion, @FechaEntregado, @IdDetalleEstado, @CodigoSemana);
-                          SELECT SCOPE_IDENTITY();";
-            }
-
-            using (SqlConnection con = new SqlConnection(GetConnectionString()))
-            {
-                using (SqlCommand cmd = new SqlCommand(query, con))
-                {
-                    // Parameters common to INSERT and UPDATE (except IdRespuesta)
-                    cmd.Parameters.AddWithValue("@IdMetaIndividual", idMetaIndividual);
-                    cmd.Parameters.AddWithValue("@Descripcion", string.IsNullOrWhiteSpace(descripcion) ? DBNull.Value : (object)descripcion);
-                    cmd.Parameters.AddWithValue("@FechaEntregado", fechaEvento);
-                    cmd.Parameters.AddWithValue("@IdDetalleEstado", idDetalleEstadoDestino);
-
-                    if (respuestaExistente != null) // UPDATE
-                    {
-                        cmd.Parameters.AddWithValue("@IdRespuesta", respuestaId);
-                        // For UPDATE, Codigo_Semana is part of the WHERE clause in ObtenerRespuestaSemanal,
-                        // so we don't set it again here. The UPDATE query doesn't include it in SET.
-                        // The UPDATE query also doesn't include NombreArchivo.
-                    }
-                    else // INSERT
-                    {
-                        cmd.Parameters.AddWithValue("@CodigoSemana", (object)codigoSemanaParaGuardar ?? DBNull.Value);
-                        // NombreArchivo is not saved to DB
-                    }
-
-
-                    try
-                    {
-                        con.Open();
-                        if (respuestaExistente != null) // Execute Update
-                        {
-                            int rowsAffected = cmd.ExecuteNonQuery();
-                            if (rowsAffected == 0) respuestaId = -1;
-                        }
-                        else // Execute Insert
-                        {
-                            object result = cmd.ExecuteScalar();
-                            if (result != null && result != DBNull.Value) { respuestaId = Convert.ToInt32(result); }
-                            else { respuestaId = -1; } // Insert failed
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error in GuardarRespuesta (MetaID: {idMetaIndividual}): {ex.Message}");
-                        throw;
-                    }
-                }
-            }
-            return respuestaId; // Return the ID of the saved record or -1 on failure
-        }
-
-
-        // Gets the response for a specific Meta Individual ID.
-        // For finalizable metas, it's the single response.
-        // For weekly metas, it should ideally get the response for the *current* or *specified* week if context is available,
-        // or the most recent one as a fallback.
-        // The WebMethod GetRespuestaDetalles will now pass CodigoSemanaDeLaPestana for weekly metas.
         public RespuestaInfo ObtenerRespuestaPorMetaId(int idMetaIndividual)
         {
             RespuestaInfo respuesta = null;
-            // This query gets the LATEST response if multiple exist (e.g. if CodigoSemana was not always used or for finalizable)
-            // For finalizable metas (CodigoSemana IS NULL), this is correct.
-            // Removed NombreArchivo from SELECT
+            // Obtiene la respuesta donde Codigo_Semana es NULL (típicamente para metas finalizadas que no son por semana)
+            // O la más reciente si hay varias (aunque para finalizadas debería haber una).
             string query = @"SELECT TOP 1 Id_Respuesta, Id_Meta_Individual, Descripcion, Fecha_Entregado, Id_Detalle_Estado, Codigo_Semana
-                             FROM dbo.Respuesta
-                             WHERE Id_Meta_Individual = @IdMetaIndividual
-                             ORDER BY Fecha_Entregado DESC";
+                         FROM dbo.Respuesta
+                         WHERE Id_Meta_Individual = @IdMetaIndividual 
+                         AND Codigo_Semana IS NULL  -- Importante para distinguir de avances semanales de metas finalizables
+                         ORDER BY Fecha_Entregado DESC";
 
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {
@@ -233,44 +109,167 @@ namespace Gestor_Desempeno
                                     Descripcion = reader["Descripcion"]?.ToString() ?? string.Empty,
                                     FechaEntregado = reader["Fecha_Entregado"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha_Entregado"]) : (DateTime?)null,
                                     IdDetalleEstado = reader["Id_Detalle_Estado"] != DBNull.Value ? Convert.ToInt32(reader["Id_Detalle_Estado"]) : (int?)null,
-                                    CodigoSemana = reader["Codigo_Semana"]?.ToString()
-                                    // NombreArchivo not mapped
+                                    CodigoSemana = reader["Codigo_Semana"]?.ToString() // Debería ser NULL aquí
                                 };
                             }
                         }
                     }
-                    catch (Exception ex) { Console.WriteLine("Error en ObtenerRespuestaPorMetaId: " + ex.Message); }
+                    catch (Exception ex) { Console.WriteLine("Error en ObtenerRespuestaPorMetaId (buscando respuesta final): " + ex.Message); throw; }
                 }
             }
             return respuesta;
         }
 
-        // ** NEW METHOD **
-        // Gets the IDs of MetaIndividual records that have a response with a specific state ID.
-        public HashSet<int> ObtenerIdsMetasConEstadoRespuesta(List<int> idsMetasIndividuales, int idDetalleEstadoRespuesta)
+        // El parámetro 'codigoSemanaEspecifico' viene de Desempeno.aspx.cs y puede ser:
+        // 1. Formato WMMYYYY: Para avances de metas finalizables (estado ACTIVO_SEMANAL).
+        // 2. Formato WMMYYYY: Para respuestas de metas semanales no finalizables.
+        // 3. NULL: Cuando se está finalizando completamente una meta finalizable (estado RESPONDIDO).
+        public int GuardarRespuesta(int idMetaIndividual, string descripcion, int idDetalleEstadoDestino, bool esMetaFinalizable, string nombreArchivo = null, string codigoSemanaEspecifico = null)
         {
-            HashSet<int> idsConRespuesta = new HashSet<int>();
-            if (idsMetasIndividuales == null || !idsMetasIndividuales.Any())
+            int respuestaId = -1;
+            DateTime fechaEvento = DateTime.Now;
+            RespuestaInfo respuestaExistente = null;
+
+            // Determinar si existe una respuesta previa para actualizarla
+            if (esMetaFinalizable)
             {
-                return idsConRespuesta; // Return empty set if no IDs provided
+                if (idDetalleEstadoDestino == ID_ESTADO_RESPONDIDO_DAL) // Finalizando la meta
+                {
+                    // Busca una respuesta "final" (sin código de semana) para esta meta.
+                    respuestaExistente = ObtenerRespuestaPorMetaId(idMetaIndividual);
+                }
+                else if (idDetalleEstadoDestino == ID_ESTADO_ACTIVO_SEMANAL_DAL && !string.IsNullOrWhiteSpace(codigoSemanaEspecifico)) // Guardando avance para una meta finalizable
+                {
+                    // Busca un avance para esta meta Y esta semana específica.
+                    respuestaExistente = ObtenerRespuestaSemanal(idMetaIndividual, codigoSemanaEspecifico);
+                }
+                // Si es finalizable, estado de avance, pero no hay codigoSemanaEspecifico, es un caso anómalo, se tratará como INSERT sin CodigoSemana (o podría fallar).
+                // Desempeno.aspx.cs debería proveer el codigoSemanaEspecifico para avances.
+            }
+            else // Meta no finalizable (semanal pura)
+            {
+                if (!string.IsNullOrWhiteSpace(codigoSemanaEspecifico))
+                {
+                    respuestaExistente = ObtenerRespuestaSemanal(idMetaIndividual, codigoSemanaEspecifico);
+                }
+                else
+                {
+                    // Error: las metas semanales no finalizables siempre deben tener un codigoSemana.
+                    Console.WriteLine($"Error: Se intentó guardar una respuesta para una meta semanal (ID: {idMetaIndividual}) sin CodigoSemana.");
+                    return -1; // O lanzar excepción
+                }
             }
 
-            // Create comma-separated string of IDs for the IN clause
-            string idList = string.Join(",", idsMetasIndividuales);
-
-            // Use string interpolation carefully or preferably use a Table-Valued Parameter for large lists
-            // Using IN clause for simplicity here, but be mindful of SQL Server limits on IN clause size.
-            string query = $@"SELECT DISTINCT Id_Meta_Individual
-                              FROM dbo.Respuesta
-                              WHERE Id_Meta_Individual IN ({idList})
-                              AND Id_Detalle_Estado = @IdDetalleEstado";
+            string query;
+            if (respuestaExistente != null)
+            {
+                // --- UPDATE ---
+                respuestaId = respuestaExistente.IdRespuesta;
+                query = @"UPDATE dbo.Respuesta SET
+                            Descripcion = @Descripcion,
+                            Fecha_Entregado = @FechaEntregado,
+                            Id_Detalle_Estado = @IdDetalleEstado
+                            -- Codigo_Semana no se actualiza; se usa para identificar el registro.
+                            -- Nombre_Archivo no es una columna de DB.
+                      WHERE Id_Respuesta = @IdRespuesta";
+            }
+            else
+            {
+                // --- INSERT ---
+                // Nombre_Archivo no se incluye en el INSERT ya que no es una columna de DB según tu RespuestaInfo.
+                query = @"INSERT INTO dbo.Respuesta 
+                            (Id_Meta_Individual, Descripcion, Fecha_Entregado, Id_Detalle_Estado, Codigo_Semana)
+                      VALUES 
+                            (@IdMetaIndividual, @Descripcion, @FechaEntregado, @IdDetalleEstado, @CodigoSemanaParam);
+                      SELECT SCOPE_IDENTITY();";
+            }
 
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {
                 using (SqlCommand cmd = new SqlCommand(query, con))
                 {
-                    // Add the state ID parameter
+                    cmd.Parameters.AddWithValue("@IdMetaIndividual", idMetaIndividual);
+                    cmd.Parameters.AddWithValue("@Descripcion", string.IsNullOrWhiteSpace(descripcion) ? DBNull.Value : (object)descripcion);
+                    cmd.Parameters.AddWithValue("@FechaEntregado", fechaEvento);
+                    cmd.Parameters.AddWithValue("@IdDetalleEstado", idDetalleEstadoDestino);
+
+                    if (respuestaExistente != null) // Parámetros para UPDATE
+                    {
+                        cmd.Parameters.AddWithValue("@IdRespuesta", respuestaId);
+                    }
+                    else // Parámetros para INSERT
+                    {
+                        // El valor de 'codigoSemanaEspecifico' es el que se debe guardar.
+                        // Si es para "Finalizar Meta", Desempeno.aspx.cs envía null.
+                        // Si es para "Guardar Avance" o "Guardar Semanal", Desempeno.aspx.cs envía WMMYYYY.
+                        cmd.Parameters.AddWithValue("@CodigoSemanaParam", (object)codigoSemanaEspecifico ?? DBNull.Value);
+                    }
+
+                    try
+                    {
+                        con.Open();
+                        if (respuestaExistente != null) // Ejecutar UPDATE
+                        {
+                            int rowsAffected = cmd.ExecuteNonQuery();
+                            if (rowsAffected == 0)
+                            {
+                                respuestaId = -1; // No se actualizó nada, podría ser un error o condición no encontrada.
+                                Console.WriteLine($"Warning: Update no afectó filas para IdRespuesta {respuestaExistente.IdRespuesta}");
+                            }
+                            // respuestaId ya tiene el ID correcto de respuestaExistente.IdRespuesta
+                        }
+                        else // Ejecutar INSERT
+                        {
+                            object result = cmd.ExecuteScalar();
+                            if (result != null && result != DBNull.Value)
+                            {
+                                respuestaId = Convert.ToInt32(result);
+                            }
+                            else
+                            {
+                                respuestaId = -1; // Falló el INSERT o SCOPE_IDENTITY() no devolvió nada.
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en RespuestaDAL.GuardarRespuesta (MetaID: {idMetaIndividual}, CodigoSemana: {codigoSemanaEspecifico}): {ex.ToString()}");
+                        throw; // Relanzar para que la capa superior sepa del error.
+                    }
+                }
+            }
+            return respuestaId;
+        }
+
+        public HashSet<int> ObtenerIdsMetasConEstadoRespuesta(List<int> idsMetasIndividuales, int idDetalleEstadoRespuesta)
+        {
+            HashSet<int> idsConRespuesta = new HashSet<int>();
+            if (idsMetasIndividuales == null || !idsMetasIndividuales.Any())
+            {
+                return idsConRespuesta;
+            }
+
+            var parameters = new List<string>();
+            var sqlParameters = new List<SqlParameter>();
+
+            for (int i = 0; i < idsMetasIndividuales.Count; i++)
+            {
+                var paramName = $"@MetaId{i}";
+                parameters.Add(paramName);
+                sqlParameters.Add(new SqlParameter(paramName, idsMetasIndividuales[i]));
+            }
+
+            string query = $@"SELECT DISTINCT Id_Meta_Individual
+                          FROM dbo.Respuesta
+                          WHERE Id_Meta_Individual IN ({string.Join(",", parameters)})
+                          AND Id_Detalle_Estado = @IdDetalleEstado";
+
+            using (SqlConnection con = new SqlConnection(GetConnectionString()))
+            {
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
                     cmd.Parameters.AddWithValue("@IdDetalleEstado", idDetalleEstadoRespuesta);
+                    cmd.Parameters.AddRange(sqlParameters.ToArray());
 
                     try
                     {
@@ -289,39 +288,12 @@ namespace Gestor_Desempeno
                     catch (Exception ex)
                     {
                         Console.WriteLine("Error en ObtenerIdsMetasConEstadoRespuesta: " + ex.Message);
-                        // Consider re-throwing or logging more details
+                        throw;
                     }
                 }
             }
             return idsConRespuesta;
         }
+    }
 
-
-        // Deletes a specific response record by its ID
-        public bool EliminarRespuesta(int idRespuesta)
-        {
-            if (idRespuesta <= 0) return false;
-            bool eliminado = false;
-            string query = "DELETE FROM dbo.Respuesta WHERE Id_Respuesta = @IdRespuesta";
-            using (SqlConnection con = new SqlConnection(GetConnectionString()))
-            {
-                using (SqlCommand cmd = new SqlCommand(query, con))
-                {
-                    cmd.Parameters.AddWithValue("@IdRespuesta", idRespuesta);
-                    try { con.Open(); int rowsAffected = cmd.ExecuteNonQuery(); eliminado = (rowsAffected > 0); }
-                    catch (Exception ex) { Console.WriteLine("Error en EliminarRespuesta: " + ex.Message); throw; }
-                }
-            }
-            return eliminado;
-        }
-
-        // Static version of GetCodigoSemana_WMMYYYY for access from WebMethod if DAL instance isn't available
-        // This is a helper for the WebMethod, not directly part of DAL's primary responsibility
-        public string GetCodigoSemana_WMMYYYY_Static(DateTime fecha,int numSemana)
-        {
-
-            return GetCodigoSemana_WMMYYYY(fecha.Year,fecha.Month, numSemana);
-        }
-
-    } // End of RespuestaDAL class
 }

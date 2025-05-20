@@ -6,6 +6,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Configuration;
 using System.Text;
+using System.Globalization;
 
 
 namespace Gestor_Desempeno
@@ -46,6 +47,24 @@ namespace Gestor_Desempeno
                 string descShort = Descripcion?.Substring(0, Math.Min(Descripcion.Length, 60)) ?? "";
                 return $"{numObjStr}.{numMetaStr} {descShort}{(Descripcion?.Length > 60 ? "..." : "")}";
             }
+        }
+    }
+
+    public class MetaIndividualInfoViewModel
+    {
+        public MetaIndividualInfo Meta { get; set; }
+        public string EstadoColorCss { get; set; }
+        public string MensajeTiempo { get; set; }
+        public string BadgeStyle { get; set; } // Para el estilo del badge (ej. color de fondo)
+
+        public MetaIndividualInfoViewModel(MetaIndividualInfo meta)
+        {
+            this.Meta = meta ?? throw new ArgumentNullException(nameof(meta)); // Es bueno validar la entrada
+
+            // Valores por defecto, se sobrescribirán en LoadMetasUsuario
+            this.EstadoColorCss = "meta-semanal-original"; // Estilo por defecto para metas semanales no finalizables
+            this.MensajeTiempo = "";
+            this.BadgeStyle = "background-color: #0EA5E9; color: white;"; // Azul por defecto para metas semanales
         }
     }
 
