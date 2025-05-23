@@ -198,7 +198,7 @@
 
           <%-- SECCIÓN DE METAS VENCIDAS (SIEMPRE VISIBLE) --%>
           <section id="metasVencidasSection" class="section-metas">
-            <h2 class="h4 mb-3 text-danger">Metas Vencidas</h2>
+            <h2 class="h4 mb-3 text-danger">Reportes Vencidos</h2>
             <asp:Repeater ID="rptMetasVencidas" runat="server" ItemType="Gestor_Desempeno.MetaIndividualInfoViewModel">
               <HeaderTemplate><div class="list-group"></HeaderTemplate> <%-- No mt-3 aquí, el padding de section-metas lo maneja --%>
               <ItemTemplate>
@@ -221,7 +221,7 @@
 
           <%-- SECCIÓN DE PLAN SEMANAL (PESTAÑAS) --%>
           <section id="planSemanalSection" class="mb-4">
-            <h2 class="h4 mb-3 text-primary">Plan Semanal</h2>
+            <h2 class="h4 mb-3 text-primary">Reporte Semanal</h2>
             <nav>
               <div class="nav nav-tabs mb-0" id="nav-tab" role="tablist">
                 <%-- El botón de Vencidas se ha movido --%>
