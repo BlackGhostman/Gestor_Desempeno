@@ -13,6 +13,8 @@ namespace Gestor_Desempeno
         private DetalleEstadoDAL detalleEstadoDAL = new DetalleEstadoDAL();
         private ClaseDAL claseDAL = new ClaseDAL();
 
+        
+
         protected void Page_Load(object sender, EventArgs e)
         {
             // --- Security Checks ---
@@ -124,20 +126,60 @@ namespace Gestor_Desempeno
         {
             if (e.Row.RowType == DataControlRowType.DataRow && gvDetalleEstado.EditIndex == e.Row.RowIndex)
             {
-                DropDownList ddlEditClase = (DropDownList)e.Row.FindControl("ddlEditClase");
+                DropDownList ddlEditClase = e.Row.FindControl("ddlEditClase") as DropDownList;
                 if (ddlEditClase != null)
                 {
+                    // 1. Poblar el DropDownList (esto ya lo haces y está bien)
                     LoadEditClaseDropdown(ddlEditClase);
-                    // Seleccionar valor actual (manejar posible NULL)
-                    HiddenField hfIdClase = (HiddenField)e.Row.FindControl("hfIdClase");
-                    if (hfIdClase != null && !string.IsNullOrEmpty(hfIdClase.Value))
+
+                    // 2. Establecer el valor seleccionado correctamente usando e.Row.DataItem
+                    object dataItem = e.Row.DataItem;
+                    if (dataItem != null)
                     {
-                        ListItem item = ddlEditClase.Items.FindByValue(hfIdClase.Value);
-                        if (item != null) ddlEditClase.SelectedValue = hfIdClase.Value;
-                    }
-                    else
-                    {
-                        ddlEditClase.SelectedValue = "0"; // Seleccionar "-- Sin Clase..." si es NULL
+                        string idClaseDelRegistroActual = null;
+                        // Usar DataBinder.Eval para obtener de forma segura la propiedad IdClase del objeto de datos
+                        object idClaseObj = DataBinder.Eval(dataItem, "IdClase");
+
+                        // Convertir el IdClase (que puede ser null) a string para buscar en el DropDownList
+                        if (idClaseObj != null && idClaseObj != DBNull.Value)
+                        {
+                            idClaseDelRegistroActual = idClaseObj.ToString();
+                        }
+
+                        ListItem itemParaSeleccionar;
+
+                        if (!string.IsNullOrEmpty(idClaseDelRegistroActual))
+                        {
+                            // Si hay un IdClase específico para este registro
+                            itemParaSeleccionar = ddlEditClase.Items.FindByValue(idClaseDelRegistroActual);
+                        }
+                        else
+                        {
+                            // Si IdClase es NULL en la base de datos, seleccionamos el item "0" 
+                            // que representa "-- Sin Clase Específica --"
+                            itemParaSeleccionar = ddlEditClase.Items.FindByValue("0");
+                        }
+
+                        if (itemParaSeleccionar != null)
+                        {
+                            ddlEditClase.ClearSelection(); // Buena práctica para evitar selecciones múltiples accidentales
+                            itemParaSeleccionar.Selected = true;
+                        }
+                        else
+                        {
+                            // Fallback: Si por alguna razón el IdClase (o "0" para NULLs) no se encuentra,
+                            // se podría seleccionar el item "0" por defecto si existe.
+                            // Esto no debería ocurrir si los datos son consistentes y LoadEditClaseDropdown funciona como se espera.
+                            ListItem defaultItem = ddlEditClase.Items.FindByValue("0");
+                            if (defaultItem != null)
+                            {
+                                ddlEditClase.ClearSelection();
+                                defaultItem.Selected = true;
+                            }
+                            // Considera registrar un warning si itemParaSeleccionar fue null inicialmente,
+                            // ya que podría indicar un problema de datos.
+                            // System.Diagnostics.Debug.WriteLine($"Advertencia: No se pudo encontrar el ítem para IdClase '{idClaseDelRegistroActual ?? "NULL"}' en ddlEditClase durante RowDataBound.");
+                        }
                     }
                 }
             }

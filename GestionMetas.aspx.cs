@@ -20,7 +20,7 @@ namespace Gestor_Desempeno
         private int? ID_ESTADO_INACTIVO_META = null; // Load in Page_Load
         // Determine Clase for Meta states if needed (e.g., if states are shared)
         // ** FIXED: Removed 'const' keyword as nullable types cannot be const **
-        private int? ID_CLASE_META = null; // Example: Set to appropriate Clase ID if filtering states
+        private int? ID_CLASE_META = 2; // Example: Set to appropriate Clase ID if filtering states
 
         protected void Page_Load(object sender, EventArgs e)
         {

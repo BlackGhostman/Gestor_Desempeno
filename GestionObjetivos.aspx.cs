@@ -18,6 +18,8 @@ namespace Gestor_Desempeno
         private DetalleEstadoDAL detalleEstadoDAL = new DetalleEstadoDAL();
         private UsuarioDAL usuarioDAL_Instance = new UsuarioDAL(); // For security checks
 
+        public const int id_claseObjetivos = 1;
+
         // Constante o configuración para el ID del estado "Inactivo" (AJUSTAR!)
         // ** IMPORTANT: Find the correct ID for 'Inactivo' state, likely from Detalle_Estado where Descripcion = 'Inactivo' **
         private int? ID_ESTADO_INACTIVO = null; // Load in Page_Load
@@ -86,7 +88,7 @@ namespace Gestor_Desempeno
             // Load dropdowns for the Add/Edit Modal
             LoadPeriodosDropdown(ddlModalPeriodo);
             LoadTiposObjetivoDropdown(ddlModalTipoObj);
-            LoadEstadosDropdown(ddlModalEstado);
+            LoadEstadosDropdown(ddlModalEstado, id_claseObjetivos);
             // Load dropdowns for the old Add form (can be removed if form is gone)
             // LoadPeriodosDropdown(ddlNuevoPeriodo); // No longer needed if form removed
             // LoadTiposObjetivoDropdown(ddlNuevoTipoObj); // No longer needed if form removed
@@ -212,7 +214,7 @@ namespace Gestor_Desempeno
                     LoadTiposObjetivoDropdown(ddlModalTipoObj);
                     SetSelectedValue(ddlModalTipoObj, objetivo.Id_Tipo_Objetivo);
 
-                    LoadEstadosDropdown(ddlModalEstado);
+                    LoadEstadosDropdown(ddlModalEstado, id_claseObjetivos);
                     SetSelectedValue(ddlModalEstado, objetivo.Id_Detalle_Estado);
 
                     // Poblar textboxes
