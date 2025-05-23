@@ -12,23 +12,23 @@
             border-radius: 5px;
             background-color: #f9f9f9;
         }
-         /* Estilo para botones en GridView */
         .gridview-button {
             padding: 0.2rem 0.5rem;
             font-size: 0.875rem;
             margin-right: 5px;
         }
+        .date-input { /* Estilo opcional para inputs de fecha */
+            max-width: 150px;
+        }
     </style>
 </asp:Content>
 <asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" runat="server">
+    
     <h1>Gestión de Periodos</h1>
     <hr />
 
     <%-- Mensajes de estado --%>
     <asp:Literal ID="litMensaje" runat="server" EnableViewState="false"></asp:Literal>
-
-    <%-- Formulario para Agregar/Editar (se mostrará/ocultará) --%>
-    <%-- Usaremos los eventos del GridView para la edición inline --%>
 
     <%-- GridView para mostrar los periodos --%>
     <div class="gridview-container table-responsive">
@@ -38,10 +38,8 @@
             OnRowCancelingEdit="gvPeriodos_RowCancelingEdit" OnRowDeleting="gvPeriodos_RowDeleting"
             AllowPaging="True" PageSize="10" OnPageIndexChanging="gvPeriodos_PageIndexChanging">
             <Columns>
-                <%-- Columna para ID (puede ocultarse si no se desea mostrar) --%>
                 <asp:BoundField DataField="Id_Periodo" HeaderText="ID" ReadOnly="True" SortExpression="Id_Periodo" />
 
-                <%-- Columna Nombre --%>
                 <asp:TemplateField HeaderText="Nombre" SortExpression="Nombre">
                     <ItemTemplate>
                         <asp:Label ID="lblNombre" runat="server" Text='<%# Bind("Nombre") %>'></asp:Label>
@@ -53,28 +51,47 @@
                     </EditItemTemplate>
                 </asp:TemplateField>
 
-                <%-- Columna Descripción --%>
                 <asp:TemplateField HeaderText="Descripción" SortExpression="Descripcion">
                     <ItemTemplate>
                         <asp:Label ID="lblDescripcion" runat="server" Text='<%# Bind("Descripcion") %>'></asp:Label>
                     </ItemTemplate>
                     <EditItemTemplate>
                         <asp:TextBox ID="txtEditDescripcion" runat="server" Text='<%# Bind("Descripcion") %>' CssClass="form-control" MaxLength="100"></asp:TextBox>
-                         <%-- No es requerido usualmente --%>
                     </EditItemTemplate>
                 </asp:TemplateField>
 
-                 <%-- Columna Estado (Activo/Inactivo) --%>
-                 <asp:TemplateField HeaderText="Estado" SortExpression="Estado">
-                     <ItemTemplate>
-                         <asp:Label ID="lblEstado" runat="server" Text='<%# (bool)Eval("Estado") ? "Activo" : "Inactivo" %>'></asp:Label>
-                     </ItemTemplate>
-                     <EditItemTemplate>
-                         <asp:CheckBox ID="chkEditEstado" runat="server" Checked='<%# Bind("Estado") %>' />
-                     </EditItemTemplate>
-                 </asp:TemplateField>
+                <%-- Nueva Columna Fecha Inicio --%>
+                <asp:TemplateField HeaderText="Fecha Inicio" SortExpression="Fecha_Inicio">
+                    <ItemTemplate>
+                        <asp:Label ID="lblFechaInicio" runat="server" Text='<%# Bind("Fecha_Inicio", "{0:dd/MM/yyyy}") %>'></asp:Label>
+                    </ItemTemplate>
+                    <EditItemTemplate>
+                        <%-- Usar TextMode="Date" para un selector de fecha nativo del navegador si es compatible y deseado --%>
+                        <asp:TextBox ID="txtEditFechaInicio" runat="server" Text='<%# Bind("Fecha_Inicio", "{0:yyyy-MM-dd}") %>' CssClass="form-control date-input" TextMode="Date"></asp:TextBox>
+                         <%-- Podrías agregar un CompareValidator para asegurar que es una fecha válida o un RangeValidator --%>
+                    </EditItemTemplate>
+                </asp:TemplateField>
 
-                <%-- Columna de Comandos (Editar, Eliminar, Actualizar, Cancelar) --%>
+                <%-- Nueva Columna Fecha Final --%>
+                <asp:TemplateField HeaderText="Fecha Final" SortExpression="Fecha_Final">
+                    <ItemTemplate>
+                        <asp:Label ID="lblFechaFinal" runat="server" Text='<%# Bind("Fecha_Final", "{0:dd/MM/yyyy}") %>'></asp:Label>
+                    </ItemTemplate>
+                    <EditItemTemplate>
+                        <asp:TextBox ID="txtEditFechaFinal" runat="server" Text='<%# Bind("Fecha_Final", "{0:yyyy-MM-dd}") %>' CssClass="form-control date-input" TextMode="Date"></asp:TextBox>
+                        <%-- Podrías agregar un CompareValidator para asegurar que Fecha_Final es posterior a Fecha_Inicio --%>
+                    </EditItemTemplate>
+                </asp:TemplateField>
+
+                <asp:TemplateField HeaderText="Estado" SortExpression="Estado">
+                    <ItemTemplate>
+                        <asp:Label ID="lblEstado" runat="server" Text='<%# (bool)Eval("Estado") ? "Activo" : "Inactivo" %>'></asp:Label>
+                    </ItemTemplate>
+                    <EditItemTemplate>
+                        <asp:CheckBox ID="chkEditEstado" runat="server" Checked='<%# Bind("Estado") %>' />
+                    </EditItemTemplate>
+                </asp:TemplateField>
+
                 <asp:TemplateField HeaderText="Acciones">
                     <ItemTemplate>
                         <asp:Button ID="btnEdit" runat="server" CommandName="Edit" Text="Editar" CssClass="btn btn-sm btn-outline-primary gridview-button" CausesValidation="false"/>
@@ -90,7 +107,7 @@
             <EmptyDataTemplate>
                 No se encontraron periodos para mostrar.
             </EmptyDataTemplate>
-             <PagerStyle CssClass="pagination-ys" />
+            <PagerStyle CssClass="pagination-ys" />
         </asp:GridView>
     </div>
 
@@ -99,26 +116,36 @@
         <h4>Agregar Nuevo Periodo</h4>
         <div class="row g-3">
             <div class="col-md-4">
-                <label for="txtNuevoNombre" class="form-label">Nombre:</label>
+                <label for="<%=txtNuevoNombre.ClientID %>" class="form-label">Nombre:</label>
                 <asp:TextBox ID="txtNuevoNombre" runat="server" CssClass="form-control" MaxLength="20"></asp:TextBox>
                 <asp:RequiredFieldValidator ID="rfvNuevoNombre" runat="server" ControlToValidate="txtNuevoNombre"
                     ErrorMessage="El nombre es requerido." Display="Dynamic" CssClass="text-danger small" ValidationGroup="NewValidation">*</asp:RequiredFieldValidator>
             </div>
             <div class="col-md-6">
-                <label for="txtNuevaDescripcion" class="form-label">Descripción:</label>
+                <label for="<%=txtNuevaDescripcion.ClientID %>" class="form-label">Descripción:</label>
                 <asp:TextBox ID="txtNuevaDescripcion" runat="server" CssClass="form-control" MaxLength="100"></asp:TextBox>
             </div>
+             <div class="col-md-4">
+                <label for="<%=txtNuevaFechaInicio.ClientID %>" class="form-label">Fecha Inicio:</label>
+                <asp:TextBox ID="txtNuevaFechaInicio" runat="server" CssClass="form-control date-input" TextMode="Date"></asp:TextBox>
+                <%-- Podrías agregar validadores aquí también --%>
+            </div>
+            <div class="col-md-4">
+                <label for="<%=txtNuevaFechaFinal.ClientID %>" class="form-label">Fecha Final:</label>
+                <asp:TextBox ID="txtNuevaFechaFinal" runat="server" CssClass="form-control date-input" TextMode="Date"></asp:TextBox>
+            </div>
             <div class="col-md-2 d-flex align-items-end">
-                 <div class="form-check">
-                     <asp:CheckBox ID="chkNuevoEstado" runat="server" Text=" Activo" Checked="true" CssClass="form-check-input"/>
-                     <label class="form-check-label" for="chkNuevoEstado">Estado</label>
-                 </div>
+                <div class="form-check">
+                    <asp:CheckBox ID="chkNuevoEstado" runat="server" Text=" Activo" Checked="true" CssClass="form-check-input"/>
+                    <label class="form-check-label" for="<%=chkNuevoEstado.ClientID %>">Estado</label>
+                </div>
             </div>
             <div class="col-12">
                 <asp:Button ID="btnAgregar" runat="server" Text="Agregar Periodo" CssClass="btn btn-primary" OnClick="btnAgregar_Click" ValidationGroup="NewValidation"/>
             </div>
         </div>
     </div>
+
 </asp:Content>
 <asp:Content ID="Content3" ContentPlaceHolderID="ScriptsContent" runat="server">
 </asp:Content>

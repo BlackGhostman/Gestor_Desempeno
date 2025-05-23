@@ -60,6 +60,24 @@ namespace Gestor_Desempeno
         protected global::System.Web.UI.WebControls.TextBox txtNuevaDescripcion;
 
         /// <summary>
+        /// Control txtNuevaFechaInicio.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtNuevaFechaInicio;
+
+        /// <summary>
+        /// Control txtNuevaFechaFinal.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtNuevaFechaFinal;
+
+        /// <summary>
         /// Control chkNuevoEstado.
         /// </summary>
         /// <remarks>

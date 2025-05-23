@@ -4,29 +4,27 @@ using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using System.Globalization; // Necesario para ParseExact si se usa
 
 namespace Gestor_Desempeno
 {
     public partial class GestionPeriodos : System.Web.UI.Page
     {
-        // Instancia del DAL
         private PeriodoDAL periodoDAL = new PeriodoDAL();
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            // --- Verificaciones de seguridad (igual que en Default.aspx.cs) ---
             if (Session["UsuarioID"] == null)
             {
                 Response.Redirect("~/Login.aspx?mensaje=SesionExpirada");
                 return;
             }
 
-            // Verificar si necesita cambiar contraseña
+            // ... (resto de tus verificaciones de seguridad) ...
             bool necesitaCambiar = false;
             string idUsuario = Session["UsuarioID"].ToString();
-            // Necesitas acceso a UsuarioDAL aquí también
-            UsuarioDAL usuarioDal = new UsuarioDAL();
-            UsuarioInfo infoActual = usuarioDal.ObtenerInfoUsuario(idUsuario);
+            UsuarioDAL usuarioDal = new UsuarioDAL(); // Asumiendo que tienes esta clase
+            UsuarioInfo infoActual = usuarioDal.ObtenerInfoUsuario(idUsuario); // Asumiendo que tienes esta clase/método
             if (infoActual != null && infoActual.NecesitaCambiarContrasena)
             {
                 necesitaCambiar = true;
@@ -37,115 +35,131 @@ namespace Gestor_Desempeno
                 Response.Redirect("~/CambiarContrasena.aspx");
                 return;
             }
-            // --- Fin Verificaciones ---
 
 
             if (!IsPostBack)
             {
-                // Cargar los datos en el GridView solo la primera vez que carga la página
                 BindGrid();
-                litMensaje.Visible = false; // Ocultar mensajes al inicio
+                litMensaje.Visible = false;
             }
         }
 
-        // Método para cargar/recargar los datos del GridView
         private void BindGrid()
         {
             try
             {
-                // Obtener solo periodos activos para mostrar por defecto
-                // **DEBUG:** Considera temporalmente cambiar a soloActivos: false para ver si hay datos inactivos
-                // List<PeriodoInfo> periodos = periodoDAL.ObtenerPeriodos(soloActivos: false);
                 List<PeriodoInfo> periodos = periodoDAL.ObtenerPeriodos(soloActivos: true);
-
-                if (periodos != null) // Verificar si la lista no es nula
+                if (periodos != null)
                 {
                     gvPeriodos.DataSource = periodos;
                     gvPeriodos.DataBind();
-
-                    // **FIX:** Mostrar mensaje si la lista está vacía, incluso si la carga fue "exitosa"
                     if (periodos.Count == 0)
                     {
-                        // Usar EmptyDataText del GridView (configurado en el ASPX) o mostrar un mensaje literal
-                        // MostrarMensaje("No se encontraron periodos activos para mostrar.", true); // Mensaje informativo
-                        litMensaje.Visible = false; // Ocultar mensajes de error/éxito si no hay datos
+                        litMensaje.Visible = false;
                     }
                     else
                     {
-                        litMensaje.Visible = false; // Ocultar mensajes si la carga es exitosa y hay datos
+                        litMensaje.Visible = false;
                     }
                 }
                 else
                 {
-                    // Si el DAL devuelve null (inesperado, pero posible)
-                    gvPeriodos.DataSource = null; // Limpiar datasource
-                    gvPeriodos.DataBind(); // Reflejar el estado vacío
+                    gvPeriodos.DataSource = null;
+                    gvPeriodos.DataBind();
                     MostrarMensaje("Error: No se pudo obtener la lista de periodos (resultado nulo).", false);
                 }
-
             }
             catch (Exception ex)
             {
-                // Mostrar un error más detallado si falla la carga
                 MostrarMensaje($"Error crítico al cargar los periodos: {ex.Message}. Verifique la conexión y la configuración.", false);
-                // Podrías querer registrar el error detallado para depuración interna
                 Console.WriteLine($"Error en BindGrid: {ex.ToString()}");
-                gvPeriodos.DataSource = null; // Asegurarse que el grid esté vacío en caso de error
+                gvPeriodos.DataSource = null;
                 gvPeriodos.DataBind();
             }
         }
 
-        // Método para mostrar mensajes al usuario
         private void MostrarMensaje(string texto, bool esExito)
         {
             litMensaje.Text = $"<div class='alert alert-{(esExito ? "success" : "danger")} alert-dismissible fade show' role='alert'>" +
-                              $"{Server.HtmlEncode(texto)}" + // Codificar para prevenir XSS
+                              $"{Server.HtmlEncode(texto)}" +
                               "<button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button>" +
                               "</div>";
             litMensaje.Visible = true;
         }
 
-        // Evento para entrar en modo edición
         protected void gvPeriodos_RowEditing(object sender, GridViewEditEventArgs e)
         {
-            gvPeriodos.EditIndex = e.NewEditIndex; // Establecer la fila a editar
-            BindGrid(); // Recargar el grid para mostrar los controles de edición
+            gvPeriodos.EditIndex = e.NewEditIndex;
+            BindGrid();
         }
 
-        // Evento para cancelar la edición
         protected void gvPeriodos_RowCancelingEdit(object sender, GridViewCancelEditEventArgs e)
         {
-            gvPeriodos.EditIndex = -1; // Salir del modo edición
-            BindGrid(); // Recargar el grid
+            gvPeriodos.EditIndex = -1;
+            BindGrid();
         }
 
-        // Evento para actualizar una fila
         protected void gvPeriodos_RowUpdating(object sender, GridViewUpdateEventArgs e)
         {
             try
             {
-                // Obtener el ID del periodo desde DataKeys
                 int Id_Periodo = Convert.ToInt32(gvPeriodos.DataKeys[e.RowIndex].Value);
 
-                // Encontrar los controles dentro de la fila en modo edición
                 TextBox txtEditNombre = (TextBox)gvPeriodos.Rows[e.RowIndex].FindControl("txtEditNombre");
                 TextBox txtEditDescripcion = (TextBox)gvPeriodos.Rows[e.RowIndex].FindControl("txtEditDescripcion");
                 CheckBox chkEditEstado = (CheckBox)gvPeriodos.Rows[e.RowIndex].FindControl("chkEditEstado");
+                TextBox txtEditFechaInicio = (TextBox)gvPeriodos.Rows[e.RowIndex].FindControl("txtEditFechaInicio");
+                TextBox txtEditFechaFinal = (TextBox)gvPeriodos.Rows[e.RowIndex].FindControl("txtEditFechaFinal");
 
-                // Validar que los controles se encontraron (aunque deberían existir)
-                if (txtEditNombre != null && txtEditDescripcion != null && chkEditEstado != null)
+                if (txtEditNombre != null && txtEditDescripcion != null && chkEditEstado != null && txtEditFechaInicio != null && txtEditFechaFinal != null)
                 {
                     string nombre = txtEditNombre.Text.Trim();
                     string descripcion = txtEditDescripcion.Text.Trim();
                     bool estado = chkEditEstado.Checked;
 
-                    // Llamar al DAL para actualizar
-                    bool actualizado = periodoDAL.ActualizarPeriodo(Id_Periodo, nombre, descripcion, estado);
+                    DateTime? fechaInicio = null;
+                    if (!string.IsNullOrWhiteSpace(txtEditFechaInicio.Text))
+                    {
+                        // El input type="date" debería devolver en formato yyyy-MM-dd
+                        if (DateTime.TryParse(txtEditFechaInicio.Text, out DateTime parsedFechaInicio))
+                        {
+                            fechaInicio = parsedFechaInicio;
+                        }
+                        else
+                        {
+                            MostrarMensaje("Formato de Fecha Inicio inválido. Use YYYY-MM-DD.", false);
+                            return;
+                        }
+                    }
+
+                    DateTime? fechaFinal = null;
+                    if (!string.IsNullOrWhiteSpace(txtEditFechaFinal.Text))
+                    {
+                        if (DateTime.TryParse(txtEditFechaFinal.Text, out DateTime parsedFechaFinal))
+                        {
+                            fechaFinal = parsedFechaFinal;
+                        }
+                        else
+                        {
+                            MostrarMensaje("Formato de Fecha Final inválido. Use YYYY-MM-DD.", false);
+                            return;
+                        }
+                    }
+
+                    // Validación adicional: Fecha Final no puede ser anterior a Fecha Inicio
+                    if (fechaInicio.HasValue && fechaFinal.HasValue && fechaFinal < fechaInicio)
+                    {
+                        MostrarMensaje("La Fecha Final no puede ser anterior a la Fecha Inicio.", false);
+                        return;
+                    }
+
+
+                    bool actualizado = periodoDAL.ActualizarPeriodo(Id_Periodo, nombre, descripcion, estado, fechaInicio, fechaFinal);
 
                     if (actualizado)
                     {
-                        gvPeriodos.EditIndex = -1; // Salir del modo edición
-                        BindGrid(); // Recargar grid
+                        gvPeriodos.EditIndex = -1;
+                        BindGrid();
                         MostrarMensaje("Periodo actualizado correctamente.", true);
                     }
                     else
@@ -164,20 +178,15 @@ namespace Gestor_Desempeno
             }
         }
 
-        // Evento para eliminar (lógicamente) una fila
         protected void gvPeriodos_RowDeleting(object sender, GridViewDeleteEventArgs e)
         {
             try
             {
-                // Obtener el ID del periodo desde DataKeys
                 int Id_Periodo = Convert.ToInt32(gvPeriodos.DataKeys[e.RowIndex].Value);
-
-                // Llamar al DAL para la eliminación lógica
                 bool eliminado = periodoDAL.EliminarPeriodoLogico(Id_Periodo);
 
                 if (eliminado)
                 {
-                    // Si la eliminación fue exitosa, recargar el grid (el periodo ya no aparecerá si solo mostramos activos)
                     BindGrid();
                     MostrarMensaje("Periodo marcado como inactivo correctamente.", true);
                 }
@@ -192,18 +201,15 @@ namespace Gestor_Desempeno
             }
         }
 
-        // Evento para manejar la paginación
         protected void gvPeriodos_PageIndexChanging(object sender, GridViewPageEventArgs e)
         {
-            gvPeriodos.PageIndex = e.NewPageIndex; // Establecer la nueva página
-            BindGrid(); // Recargar el grid con la página correcta
+            gvPeriodos.PageIndex = e.NewPageIndex;
+            BindGrid();
         }
 
-        // Evento del botón "Agregar Periodo"
         protected void btnAgregar_Click(object sender, EventArgs e)
         {
-            // Validar que los campos no estén vacíos (aunque RequiredFieldValidator ayuda)
-            if (Page.IsValid) // Verifica validadores del grupo "NewValidation"
+            if (Page.IsValid)
             {
                 try
                 {
@@ -211,17 +217,52 @@ namespace Gestor_Desempeno
                     string descripcion = txtNuevaDescripcion.Text.Trim();
                     bool estado = chkNuevoEstado.Checked;
 
-                    // Llamar al DAL para insertar
-                    bool insertado = periodoDAL.InsertarPeriodo(nombre, descripcion, estado);
+                    DateTime? fechaInicio = null;
+                    if (!string.IsNullOrWhiteSpace(txtNuevaFechaInicio.Text))
+                    {
+                        if (DateTime.TryParse(txtNuevaFechaInicio.Text, out DateTime parsedFechaInicio))
+                        {
+                            fechaInicio = parsedFechaInicio;
+                        }
+                        else
+                        {
+                            MostrarMensaje("Formato de Fecha Inicio inválido para nuevo periodo. Use YYYY-MM-DD.", false);
+                            return;
+                        }
+                    }
+
+                    DateTime? fechaFinal = null;
+                    if (!string.IsNullOrWhiteSpace(txtNuevaFechaFinal.Text))
+                    {
+                        if (DateTime.TryParse(txtNuevaFechaFinal.Text, out DateTime parsedFechaFinal))
+                        {
+                            fechaFinal = parsedFechaFinal;
+                        }
+                        else
+                        {
+                            MostrarMensaje("Formato de Fecha Final inválido para nuevo periodo. Use YYYY-MM-DD.", false);
+                            return;
+                        }
+                    }
+
+                    // Validación adicional: Fecha Final no puede ser anterior a Fecha Inicio
+                    if (fechaInicio.HasValue && fechaFinal.HasValue && fechaFinal < fechaInicio)
+                    {
+                        MostrarMensaje("La Fecha Final no puede ser anterior a la Fecha Inicio al agregar.", false);
+                        return;
+                    }
+
+                    bool insertado = periodoDAL.InsertarPeriodo(nombre, descripcion, estado, fechaInicio, fechaFinal);
 
                     if (insertado)
                     {
-                        BindGrid(); // Recargar el grid para mostrar el nuevo periodo
+                        BindGrid();
                         MostrarMensaje("Nuevo periodo agregado correctamente.", true);
-                        // Limpiar los campos del formulario de agregar
                         txtNuevoNombre.Text = "";
                         txtNuevaDescripcion.Text = "";
-                        chkNuevoEstado.Checked = true; // Estado por defecto activo
+                        chkNuevoEstado.Checked = true;
+                        txtNuevaFechaInicio.Text = ""; // Limpiar campo
+                        txtNuevaFechaFinal.Text = "";  // Limpiar campo
                     }
                     else
                     {
