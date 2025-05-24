@@ -49,6 +49,9 @@ namespace Gestor_Desempeno
         private const string BADGE_STYLE_A_TIEMPO = "background-color: #198754; color: white;";
         private const string BADGE_STYLE_SEMANAL_ORIGINAL = "background-color: #0EA5E9; color: white;";
 
+        private const int ID_ESTADO_ACTIVO_META_INDIVIDUAL = 7; // Ya existe, "Activo" para Meta_Individual
+        private const int ID_ESTADO_RESPONDIDO_META_INDIVIDUAL = 13; // ID del nuevo estado "Respondido" para Meta_Individual
+
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -89,11 +92,21 @@ namespace Gestor_Desempeno
             }
         }
 
+
         private void LoadMetasUsuario(string usuario)
         {
             try
             {
+                // 1. Obtener TODAS las metas asignadas al usuario.
+                //    Tu método 'ObtenerMetasIndividualesPorUsuario' ya trae el 'IdDetalleEstado' de Meta_Individual.
                 List<MetaIndividualInfo> todasLasMetasDelUsuario = metaIndDAL.ObtenerMetasIndividualesPorUsuario(usuario);
+
+                // 2. Filtrar estas metas para procesar solo aquellas cuyo 'IdDetalleEstado' en 'Meta_Individual' sea 7 ("Activo").
+                List<MetaIndividualInfo> metasActivasParaProcesar = todasLasMetasDelUsuario
+                    .Where(m => m.IdDetalleEstado == ID_ESTADO_ACTIVO_META_INDIVIDUAL)
+                    .ToList();
+
+                // Inicializar listas para los ViewModels de cada sección/repeater
                 var metasParaVencidas = new List<MetaIndividualInfoViewModel>();
                 var metasParaSemana1 = new List<MetaIndividualInfoViewModel>();
                 var metasParaSemana2 = new List<MetaIndividualInfoViewModel>();
@@ -101,31 +114,17 @@ namespace Gestor_Desempeno
                 var metasParaSemana4 = new List<MetaIndividualInfoViewModel>();
                 var metasParaSemana5 = new List<MetaIndividualInfoViewModel>();
 
-                List<int> idsFinalizablesOriginales = todasLasMetasDelUsuario
-                                                    .Where(m => m.EsFinalizable == true)
-                                                    .Select(m => m.IdMetaIndividual)
-                                                    .ToList();
-
-                HashSet<int> idsConRespuestaTotalmenteFinalizada = new HashSet<int>();
-                if (idsFinalizablesOriginales.Any())
-                {
-                    idsConRespuestaTotalmenteFinalizada = respuestaDAL.ObtenerIdsMetasConEstadoRespuesta(idsFinalizablesOriginales, ID_ESTADO_RESPONDIDO);
-                }
-
                 DateTime hoy = DateTime.Today;
                 DateTime ahora = DateTime.Now;
 
-                foreach (var meta in todasLasMetasDelUsuario)
+                // 3. Procesar la lista de 'metasActivasParaProcesar'
+                foreach (var meta in metasActivasParaProcesar)
                 {
+                    // Tu 'MetaIndividualInfoViewModel' ya está definido en MetaIndividualDAL.cs
                     var viewModel = new MetaIndividualInfoViewModel(meta);
 
                     if (meta.EsFinalizable == true)
                     {
-                        if (idsConRespuestaTotalmenteFinalizada.Contains(meta.IdMetaIndividual))
-                        {
-                            continue;
-                        }
-
                         if (!meta.FechaFinal.HasValue)
                         {
                             viewModel.EstadoColorCss = CSS_META_A_TIEMPO;
@@ -138,15 +137,15 @@ namespace Gestor_Desempeno
 
                         DateTime fechaFinalMetaDate = meta.FechaFinal.Value.Date;
 
-                        if (fechaFinalMetaDate < hoy)
+                        if (fechaFinalMetaDate < hoy) // Vencida
                         {
                             viewModel.EstadoColorCss = CSS_META_VENCIDA;
                             viewModel.BadgeStyle = BADGE_STYLE_VENCIDA;
-                            TimeSpan ts = hoy - fechaFinalMetaDate;
-                            viewModel.MensajeTiempo = ts.Days == 1 ? "Venció ayer" : $"Venció hace {ts.Days} días";
+                            TimeSpan tsVencida = hoy - fechaFinalMetaDate;
+                            viewModel.MensajeTiempo = tsVencida.Days == 1 ? "Venció ayer" : $"Venció hace {tsVencida.Days} días";
                             metasParaVencidas.Add(viewModel);
                         }
-                        else if (fechaFinalMetaDate == hoy)
+                        else if (fechaFinalMetaDate == hoy) // Vence Hoy
                         {
                             viewModel.EstadoColorCss = CSS_META_HOY;
                             viewModel.BadgeStyle = BADGE_STYLE_HOY;
@@ -162,28 +161,28 @@ namespace Gestor_Desempeno
                             int semanaDeVencimientoHoy = GetWeekOfMonth(fechaFinalMetaDate);
                             AsignarViewModelASemana(viewModel, semanaDeVencimientoHoy, metasParaSemana1, metasParaSemana2, metasParaSemana3, metasParaSemana4, metasParaSemana5);
                         }
-                        else
+                        else // A Tiempo (vence en el futuro)
                         {
                             if (fechaFinalMetaDate.Year == hoy.Year && fechaFinalMetaDate.Month == hoy.Month)
                             {
                                 viewModel.EstadoColorCss = CSS_META_A_TIEMPO;
                                 viewModel.BadgeStyle = BADGE_STYLE_A_TIEMPO;
-                                TimeSpan ts = fechaFinalMetaDate - hoy;
-                                viewModel.MensajeTiempo = ts.Days == 1 ? "Vence mañana" : $"Vence en {ts.Days} días";
+                                TimeSpan tsATiempo = fechaFinalMetaDate - hoy;
+                                viewModel.MensajeTiempo = tsATiempo.Days == 1 ? "Vence mañana" : $"Vence en {tsATiempo.Days} días";
                                 int semanaDeVencimiento = GetWeekOfMonth(fechaFinalMetaDate);
                                 AsignarViewModelASemana(viewModel, semanaDeVencimiento, metasParaSemana1, metasParaSemana2, metasParaSemana3, metasParaSemana4, metasParaSemana5);
                             }
-                            else
-                            {
-                                continue;
-                            }
+                            // Metas a tiempo de meses futuros no se añaden a las pestañas de este mes.
                         }
                     }
-                    else
+                    else // Metas NO Finalizables (semanales puras)
                     {
+                        // Estas metas, si están activas (IdDetalleEstado = 7), se muestran.
+                        // Su estilo y mensaje se manejan aquí. El ItemTemplate usa 'DisplayTextLista2'.
                         viewModel.EstadoColorCss = CSS_META_SEMANAL_ORIGINAL;
                         viewModel.BadgeStyle = BADGE_STYLE_SEMANAL_ORIGINAL;
-                        viewModel.MensajeTiempo = "";
+                        viewModel.MensajeTiempo = !string.IsNullOrWhiteSpace(meta.NombreTipoObjetivo) ? meta.NombreTipoObjetivo : "Reporte Semanal";
+
                         metasParaSemana1.Add(viewModel);
                         metasParaSemana2.Add(viewModel);
                         metasParaSemana3.Add(viewModel);
@@ -192,6 +191,7 @@ namespace Gestor_Desempeno
                     }
                 }
 
+                // 4. Hacer DataBind a los Repeaters y manejar paneles vacíos
                 rptMetasVencidas.DataSource = metasParaVencidas.OrderBy(m => m.Meta.FechaFinal ?? DateTime.MaxValue).ThenBy(m => m.Meta.Descripcion);
                 rptMetasVencidas.DataBind();
                 pnlEmptyMetasVencidas.Visible = !metasParaVencidas.Any();
@@ -207,10 +207,15 @@ namespace Gestor_Desempeno
                 MostrarMensaje($"Error cargando metas: {ex.Message}", false);
                 Console.WriteLine($"Error en LoadMetasUsuario: {ex.ToString()}");
                 pnlEmptyMetasVencidas.Visible = true;
-                pnlEmptySemana1.Visible = true; pnlEmptySemana2.Visible = true; pnlEmptySemana3.Visible = true; pnlEmptySemana4.Visible = true; pnlEmptySemana5.Visible = true;
+                pnlEmptySemana1.Visible = true; pnlEmptySemana2.Visible = true;
+                pnlEmptySemana3.Visible = true; pnlEmptySemana4.Visible = true;
+                pnlEmptySemana5.Visible = true;
             }
         }
 
+        // Asegúrate de que estos métodos auxiliares (GetWeekOfMonth, AsignarViewModelASemana, BindRepeaterSemanaConViewModel)
+        // estén presentes en tu clase Desempeno.aspx.cs y funcionen como esperas.
+        // Por ejemplo, AsignarViewModelASemana:
         private void AsignarViewModelASemana(MetaIndividualInfoViewModel viewModel, int numeroSemanaDelMes,
             List<MetaIndividualInfoViewModel> s1, List<MetaIndividualInfoViewModel> s2,
             List<MetaIndividualInfoViewModel> s3, List<MetaIndividualInfoViewModel> s4, List<MetaIndividualInfoViewModel> s5)
@@ -223,10 +228,18 @@ namespace Gestor_Desempeno
                 case 4: if (!s4.Any(vm => vm.Meta.IdMetaIndividual == viewModel.Meta.IdMetaIndividual)) s4.Add(viewModel); break;
                 case 5: if (!s5.Any(vm => vm.Meta.IdMetaIndividual == viewModel.Meta.IdMetaIndividual)) s5.Add(viewModel); break;
                 default:
-                    Console.WriteLine($"Warning: Número de semana ({numeroSemanaDelMes}) inválido para meta ID {viewModel.Meta.IdMetaIndividual}. No se asignó a pestaña semanal.");
+                    Console.WriteLine($"Warning (AsignarViewModelASemana): Número de semana ({numeroSemanaDelMes}) inválido para meta ID {viewModel.Meta.IdMetaIndividual}.");
                     break;
             }
         }
+
+        // Y BindRepeaterSemanaConViewModel (parece que ya lo tienes)
+        // private void BindRepeaterSemanaConViewModel(Repeater rpt, Panel pnlEmpty, List<MetaIndividualInfoViewModel> data) { ... }
+
+        // Y GetWeekOfMonth (parece que ya lo tienes)
+        // public int GetWeekOfMonth(DateTime date) { ... }
+
+
 
         private void BindRepeaterSemanaConViewModel(Repeater rpt, Panel pnlEmpty, List<MetaIndividualInfoViewModel> data)
         {
@@ -510,6 +523,10 @@ namespace Gestor_Desempeno
             }
         }
 
+        
+
+        // En Desempeno.aspx.cs
+
         protected void btModalFinalizarMeta_Click(object sender, EventArgs e)
         {
             string currentUser = Session["UsuarioID"]?.ToString();
@@ -518,27 +535,77 @@ namespace Gestor_Desempeno
             try
             {
                 int metaId = Convert.ToInt32(hfSelectedMetaId.Value);
-                string observacion = modalObservacion.Value;
+                string observacion = modalObservacion.Value; // Textarea del modal
                 string nombreArchivoParaBd = fileUploadControl.HasFile ? fileUploadControl.FileName : null;
 
-                int respuestaId = respuestaDAL.GuardarRespuesta(metaId, observacion,
-                                                ID_ESTADO_RESPONDIDO,
-                                                true,
-                                                nombreArchivoParaBd,
-                                                null); // Para metas finalizadas, CodigoSemana es NULL
+                // hfActiveWeekNumber.Value contendrá "overdue" si la meta se abrió desde la sección de vencidas,
+                // o el número de semana ("1", "2", etc.) si se abrió desde una pestaña semanal.
+                string pestanaActivaOContexto = hfActiveWeekNumber.Value;
+
+                string codigoSemanaParaGuardarFinalizacion = "0000000"; // Valor por defecto para finalización estándar
+
+                // Determinar el Codigo_Semana para la Respuesta al finalizar:
+                // Si la meta que se está finalizando proviene de la sección de "Vencidas",
+                // su Codigo_Semana en la tabla Respuesta debe ser "0000000".
+                if (pestanaActivaOContexto == "overdue")
+                {
+                    codigoSemanaParaGuardarFinalizacion = "0000000";
+                    Console.WriteLine($"FinalizarMeta (Contexto: Vencida): MetaID {metaId}. CodigoSemana para Respuesta: {codigoSemanaParaGuardarFinalizacion}");
+                }
+                else
+                {
+                    // Para metas finalizadas que no estaban en "Vencidas" (ej. finalizadas desde una pestaña semanal
+                    // antes de vencer o justo el día que vencen), su registro de Respuesta final no lleva un Codigo_Semana específico.
+                    Console.WriteLine($"FinalizarMeta (Contexto: No Vencida): MetaID {metaId}. CodigoSemana para Respuesta: null");
+                }
+
+                // Llamar a GuardarRespuesta.
+                // ID_ESTADO_RESPONDIDO (e.g., 11) es para la tabla Respuesta.
+                // ID_ESTADO_RESPONDIDO_META_INDIVIDUAL (e.g., 13 o 12) es para la tabla Meta_Individual.
+                int respuestaId = respuestaDAL.GuardarRespuesta(
+                    metaId,
+                    observacion,
+                    ID_ESTADO_RESPONDIDO, // Estado de la RESPUESTA (ej: 11)
+                    true,                 // Es una meta finalizable (asumiendo que este botón es para ellas)
+                    nombreArchivoParaBd,
+                    codigoSemanaParaGuardarFinalizacion // Será "0000000" para vencidas, o null para otras finalizaciones
+                );
 
                 if (respuestaId > 0)
                 {
                     bool archivoOk = true;
-                    if (fileUploadControl.HasFile) archivoOk = GuardarDocumentoServicioWeb(respuestaId);
-                    MostrarMensaje(archivoOk ? "Meta finalizada correctamente." : "Meta finalizada, pero hubo un error al guardar el archivo adjunto.", archivoOk);
-                    hdGuardado.Value = "true";
+                    if (fileUploadControl.HasFile)
+                    {
+                        archivoOk = GuardarDocumentoServicioWeb(respuestaId); // Asegúrate que este método use 'respuestaId' para la carpeta.
+                    }
+
+                    if (archivoOk)
+                    {
+                        // Actualizar el estado de la Meta_Individual a "Respondido" (o "Completado")
+                        bool estadoMetaActualizado = metaIndDAL.ActualizarEstadoMetaIndividual(metaId, ID_ESTADO_RESPONDIDO_META_INDIVIDUAL);
+
+                        if (estadoMetaActualizado)
+                        {
+                            MostrarMensaje("Meta finalizada y su estado actualizado correctamente.", true);
+                        }
+                        else
+                        {
+                            MostrarMensaje("Meta finalizada (Respuesta guardada), pero hubo un error al actualizar el estado de la meta. Contacte a soporte.", false);
+                        }
+                    }
+                    else
+                    {
+                        // La respuesta se guardó, pero el archivo no. El estado de la meta individual no se actualizó para prevenir inconsistencias.
+                        MostrarMensaje("Meta finalizada (Respuesta guardada), pero hubo un error al guardar el archivo adjunto. El estado de la meta no fue actualizado.", false);
+                    }
+                    hdGuardado.Value = "true"; // Para que el JavaScript cierre el modal
                 }
                 else
                 {
-                    MostrarMensaje("No se pudo finalizar la meta (DAL).", false);
+                    MostrarMensaje("No se pudo finalizar la meta (error al guardar en tabla Respuesta).", false);
                 }
-                LoadMetasUsuario(currentUser);
+
+                LoadMetasUsuario(currentUser); // Recargar la lista de metas
             }
             catch (Exception ex)
             {

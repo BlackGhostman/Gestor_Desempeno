@@ -76,6 +76,37 @@ namespace Gestor_Desempeno
             return ConfigurationManager.ConnectionStrings["ObjetivosConnection"].ConnectionString;
         }
 
+        // Dentro de tu clase MetaIndividualDAL en MetaIndividualDAL.cs
+
+        public bool ActualizarEstadoMetaIndividual(int idMetaIndividual, int nuevoIdDetalleEstado)
+        {
+            string query = @"UPDATE dbo.Meta_Individual 
+                     SET Id_Detalle_Estado = @NuevoIdDetalleEstado 
+                     WHERE Id_Meta_Individual = @IdMetaIndividual";
+
+            using (SqlConnection con = new SqlConnection(GetConnectionString()))
+            {
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@NuevoIdDetalleEstado", nuevoIdDetalleEstado);
+                    cmd.Parameters.AddWithValue("@IdMetaIndividual", idMetaIndividual);
+
+                    try
+                    {
+                        con.Open();
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        return rowsAffected > 0; // Retorna true si al menos una fila fue actualizada
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en MetaIndividualDAL.ActualizarEstadoMetaIndividual: {ex.Message}");
+                        // Considera registrar el error de forma más robusta si es necesario
+                        return false;
+                    }
+                }
+            }
+        }
+
         // ID de la Clase para los estados de Meta Individual (AJUSTAR SI ES NECESARIO)
         private const int ID_CLASE_META_IND = 4;
 
