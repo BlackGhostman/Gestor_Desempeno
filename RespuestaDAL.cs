@@ -18,6 +18,8 @@ namespace Gestor_Desempeno
         public int? IdDetalleEstado { get; set; }
         public string CodigoSemana { get; set; } // nvarchar(10)
         public string NombreArchivo { get; set; } // For future use, not a DB column
+
+        public string DatosDocs { get; set; }
     }
 
 
@@ -26,6 +28,85 @@ namespace Gestor_Desempeno
         private string GetConnectionString()
         {
             return ConfigurationManager.ConnectionStrings["ObjetivosConnection"].ConnectionString;
+        }
+
+
+        // En tu clase RespuestaDAL dentro de RespuestaDAL.cs
+
+        public List<RespuestaInfo> ObtenerHistorialRespuestas(int idMetaIndividual)
+        {
+            List<RespuestaInfo> historial = new List<RespuestaInfo>();
+            // Esta query trae todas las columnas de Respuesta para la meta dada, ordenadas por la más reciente.
+            string query = @"SELECT Id_Respuesta, Id_Meta_Individual, Descripcion, Fecha_Entregado, Id_Detalle_Estado, Codigo_Semana 
+                     FROM dbo.Respuesta 
+                     WHERE Id_Meta_Individual = @IdMetaIndividual 
+                     ORDER BY Fecha_Entregado DESC";
+
+            using (SqlConnection con = new SqlConnection(GetConnectionString())) // Asegúrate que GetConnectionString() exista y funcione
+            {
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@IdMetaIndividual", idMetaIndividual);
+                    try
+                    {
+                        con.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                historial.Add(new RespuestaInfo
+                                {
+                                    IdRespuesta = Convert.ToInt32(reader["Id_Respuesta"]),
+                                    IdMetaIndividual = reader["Id_Meta_Individual"] != DBNull.Value ? Convert.ToInt32(reader["Id_Meta_Individual"]) : (int?)null,
+                                    Descripcion = reader["Descripcion"]?.ToString() ?? string.Empty, // Importante para tu requerimiento
+                                    FechaEntregado = reader["Fecha_Entregado"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha_Entregado"]) : (DateTime?)null,
+                                    IdDetalleEstado = reader["Id_Detalle_Estado"] != DBNull.Value ? Convert.ToInt32(reader["Id_Detalle_Estado"]) : (int?)null,
+                                    CodigoSemana = reader["Codigo_Semana"]?.ToString()
+                                    // Nota: RespuestaInfo también tiene NombreArchivo, pero no está en esta query. Si lo necesitas, añádelo.
+                                });
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en RespuestaDAL.ObtenerHistorialRespuestas: {ex.Message}");
+                        // Considera un logging más robusto aquí.
+                        throw; // Relanzar para que la capa superior sepa del error.
+                    }
+                }
+            }
+            return historial; // Esto debería devolver la lista de respuestas si existen.
+        }
+
+        // Nuevo método para determinar la fecha de la última respuesta del subordinado (para "Respondida Fuera de Tiempo")
+        public DateTime? ObtenerFechaUltimaRespuestaSubordinado(int idMetaIndividual)
+        {
+            DateTime? fecha = null;
+            // Esta consulta asume que la "última respuesta" del subordinado que importa es la que tiene
+            // un estado de respuesta "Respondido" (ID 11 para la clase Respuesta) o es la más reciente.
+            // Podría necesitar ajustes según cómo exactamente se marca una meta como "lista para revisión del jefe".
+            string query = @"SELECT TOP 1 Fecha_Entregado 
+                     FROM dbo.Respuesta
+                     WHERE Id_Meta_Individual = @IdMetaIndividual
+                             ORDER BY Fecha_Entregado DESC";
+            using (SqlConnection con = new SqlConnection(GetConnectionString()))
+            {
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@IdMetaIndividual", idMetaIndividual);
+                    try
+                    {
+                        con.Open();
+                        object result = cmd.ExecuteScalar();
+                        if (result != null && result != DBNull.Value)
+                        {
+                            fecha = Convert.ToDateTime(result);
+                        }
+                    }
+                    catch (Exception ex) { /* Log */ }
+                }
+            }
+            return fecha;
         }
 
         // Constantes para los estados (es mejor tenerlas definidas en un solo lugar, pero las replico aquí para claridad del ejemplo)
@@ -46,7 +127,7 @@ namespace Gestor_Desempeno
 
             string query = @"SELECT Id_Respuesta, Id_Meta_Individual, Descripcion, Fecha_Entregado, Id_Detalle_Estado, Codigo_Semana
                          FROM dbo.Respuesta
-                         WHERE Id_Meta_Individual = @IdMetaIndividual AND Codigo_Semana = @CodigoSemana";
+                         WHERE Id_Meta_Individual = @IdMetaIndividual ";//AND Codigo_Semana = @CodigoSemana
 
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {
@@ -169,8 +250,6 @@ namespace Gestor_Desempeno
                             Descripcion = @Descripcion,
                             Fecha_Entregado = @FechaEntregado,
                             Id_Detalle_Estado = @IdDetalleEstado
-                            -- Codigo_Semana no se actualiza; se usa para identificar el registro.
-                            -- Nombre_Archivo no es una columna de DB.
                       WHERE Id_Respuesta = @IdRespuesta";
             }
             else

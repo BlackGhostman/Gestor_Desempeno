@@ -293,174 +293,110 @@ namespace Gestor_Desempeno
             }
         }
 
+
+
         [WebMethod(EnableSession = true)]
         public static object GetRespuestaDetalles(int metaId, bool esFinalizable, string codigoSemanaDeLaPestana)
         {
+            // 'esFinalizable' y 'codigoSemanaDeLaPestana' pueden ser menos relevantes ahora para lo que devuelve este método,
+            // pero podrían seguir siendo útiles si el modal se comporta diferente o si necesitas algún contexto de la llamada.
+            // Por ahora, nos centraremos en devolver el historial completo para 'metaId'.
+
             string currentUser = HttpContext.Current.Session["UsuarioID"]?.ToString();
             if (string.IsNullOrEmpty(currentUser))
             {
                 return new { success = false, message = "Error: Sesión de usuario no encontrada." };
             }
 
-            Desempeno paginaActual = HttpContext.Current.Handler as Desempeno;
-            if (paginaActual == null)
-            {
-                Console.WriteLine("Error en GetRespuestaDetalles: No se pudo obtener la instancia de la página actual.");
-                return new { success = false, message = "Error de contexto de página para cargar documentos." };
-            }
-
-            MetaIndividualDAL localMetaIndDAL = paginaActual.metaIndDAL;
-            RespuestaDAL localRespuestaDAL = paginaActual.respuestaDAL;
+            // Necesitaremos acceso a las instancias DAL y al servicio vs2020.
+            // Como es un método estático, instanciamos lo necesario aquí.
+            MetaIndividualDAL localMetaIndDAL = new MetaIndividualDAL();
+            RespuestaDAL localRespuestaDAL = new RespuestaDAL();
+            apivs2020.wsapi servicioVs2020 = new apivs2020.wsapi(); // Instancia del servicio de documentos
 
             try
             {
                 MetaIndividualInfo metaInfo = localMetaIndDAL.ObtenerMetaIndividualPorId(metaId);
                 string descripcionMeta = metaInfo?.Descripcion ?? "Descripción de meta no encontrada.";
-                RespuestaInfo respuestaExistente = null;
 
-                // Si es finalizable, y se pasa un codigoSemanaDeLaPestana (incluyendo "0000000" para vencidas),
-                // se busca una respuesta semanal (avance).
-                // Si es finalizable y NO se pasa codigoSemanaDeLaPestana (o es null/empty),
-                // se busca la respuesta "final" (aquella sin código de semana).
-                if (esFinalizable)
+                // Obtener el historial de todas las respuestas para esta metaId
+                List<RespuestaInfo> historial = localRespuestaDAL.ObtenerHistorialRespuestas(metaId); // Usa el método que ya tienes
+
+                if (historial != null && historial.Any())
                 {
-                    if (!string.IsNullOrEmpty(codigoSemanaDeLaPestana))
+                    // Leer la configuración del Web.config para el servicio de documentos
+                    string wsUsuario = ConfigurationManager.AppSettings["Usuario"];
+                    string wsClave = ConfigurationManager.AppSettings["Clave"];
+                    string wsArchivador = ConfigurationManager.AppSettings["Archivador"];
+                    string wsGaveta = ConfigurationManager.AppSettings["Gaveta"];
+                    string wsLlave = ConfigurationManager.AppSettings["Llave"];
+
+                    // Iterar sobre cada respuesta en el historial para obtener sus documentos
+                    foreach (RespuestaInfo respuestaItem in historial)
                     {
-                        respuestaExistente = localRespuestaDAL.ObtenerRespuestaSemanal(metaId, codigoSemanaDeLaPestana);
-                        Console.WriteLine($"GetRespuestaDetalles (Finalizable, con CodigoSemana='{codigoSemanaDeLaPestana}'): RespuestaExistente ID = {(respuestaExistente?.IdRespuesta.ToString() ?? "NULL")}");
-                    }
-                    else
-                    {
-                        // Esto es para cargar el estado de una meta que ya fue FINALIZADA (estado RESPONDIDO)
-                        // y que no tiene un CodigoSemana asociado a su respuesta final.
-                        respuestaExistente = localRespuestaDAL.ObtenerRespuestaPorMetaId(metaId);
-                        Console.WriteLine($"GetRespuestaDetalles (Finalizable, SIN CodigoSemana): RespuestaExistente ID = {(respuestaExistente?.IdRespuesta.ToString() ?? "NULL")}");
-                    }
-                }
-                else if (!string.IsNullOrEmpty(codigoSemanaDeLaPestana)) // Meta semanal no finalizable
-                {
-                    respuestaExistente = localRespuestaDAL.ObtenerRespuestaSemanal(metaId, codigoSemanaDeLaPestana);
-                    Console.WriteLine($"GetRespuestaDetalles (No Finalizable, con CodigoSemana='{codigoSemanaDeLaPestana}'): RespuestaExistente ID = {(respuestaExistente?.IdRespuesta.ToString() ?? "NULL")}");
-                }
-
-                string observacionGuardada = respuestaExistente?.Descripcion ?? "";
-                string datosDocs = "";
-
-                if (respuestaExistente != null && respuestaExistente.IdRespuesta > 0)
-                {
-                    try
-                    {
-                        string wsUsuario = ConfigurationManager.AppSettings["Usuario"];
-                        string wsClave = ConfigurationManager.AppSettings["Clave"];
-                        string wsArchivador = ConfigurationManager.AppSettings["Archivador"];
-                        string wsGaveta = ConfigurationManager.AppSettings["Gaveta"];
-                        string wsLlave = ConfigurationManager.AppSettings["Llave"];
-                        string idCarpetaRespuestaWs = "";
-                        string nombreCarpetaWs = respuestaExistente.IdRespuesta.ToString();
-
-                        DataSet dsCarpetaInfo = null;
-                        try
+                        if (respuestaItem.IdRespuesta > 0)
                         {
-                            dsCarpetaInfo = paginaActual.vs2020.Devuelve_Ids_Gaveta_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, nombreCarpetaWs);
-                        }
-                        catch (Exception exServicio)
-                        {
-                            Console.WriteLine($"GetRespuestaDetalles: Excepción llamando a Devuelve_Ids_Gaveta_Carpeta para '{nombreCarpetaWs}': {exServicio.Message}");
-                        }
+                            string datosDocsParaEsteItem = "";
+                            string idCarpetaRespuestaWs = "";
+                            string nombreCarpetaWs = respuestaItem.IdRespuesta.ToString();
 
-                        if (dsCarpetaInfo != null && dsCarpetaInfo.Tables.Count > 0 && dsCarpetaInfo.Tables[0].Rows.Count > 0)
-                        {
-                            if (dsCarpetaInfo.Tables[0].Rows.Count > 1 && dsCarpetaInfo.Tables[0].Columns.Contains("Valor"))
+                            // Lógica para obtener idCarpetaRespuestaWs y luego los documentos (adaptada de RevisionMetasSubordinados)
+                            DataSet dsCarpetaInfo = null;
+                            try { dsCarpetaInfo = servicioVs2020.Devuelve_Ids_Gaveta_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, nombreCarpetaWs); }
+                            catch (Exception exServicio) { Console.WriteLine($"GetRespuestaDetalles (Docs Historial Desempeño): Excepción Devuelve_Ids_Gaveta_Carpeta para '{nombreCarpetaWs}': {exServicio.Message}"); }
+
+                            if (dsCarpetaInfo != null && dsCarpetaInfo.Tables.Count > 0 && dsCarpetaInfo.Tables[0].Rows.Count > 0)
                             {
-                                idCarpetaRespuestaWs = dsCarpetaInfo.Tables[0].Rows[1]["Valor"]?.ToString();
+                                if (dsCarpetaInfo.Tables[0].Rows.Count > 1 && dsCarpetaInfo.Tables[0].Columns.Contains("Valor"))
+                                    idCarpetaRespuestaWs = dsCarpetaInfo.Tables[0].Rows[1]["Valor"]?.ToString();
+                                else if (dsCarpetaInfo.Tables[0].Columns.Contains("Valor"))
+                                    idCarpetaRespuestaWs = dsCarpetaInfo.Tables[0].Rows[0]["Valor"]?.ToString();
                             }
-                            else if (dsCarpetaInfo.Tables[0].Columns.Contains("Valor"))
-                            {
-                                idCarpetaRespuestaWs = dsCarpetaInfo.Tables[0].Rows[0]["Valor"]?.ToString();
-                            }
-                            else
-                            {
-                                Console.WriteLine($"GetRespuestaDetalles: Devuelve_Ids_Gaveta_Carpeta para '{nombreCarpetaWs}' no devolvió la estructura esperada. Filas: {dsCarpetaInfo.Tables[0].Rows.Count}, Columnas: {string.Join(",", dsCarpetaInfo.Tables[0].Columns.Cast<DataColumn>().Select(c => c.ColumnName))}");
-                            }
-                            if (!string.IsNullOrEmpty(idCarpetaRespuestaWs)) Console.WriteLine($"GetRespuestaDetalles: ID de carpeta existente encontrado para '{nombreCarpetaWs}': {idCarpetaRespuestaWs}");
 
-                        }
-                        else
-                        {
-                            Console.WriteLine($"GetRespuestaDetalles: Devuelve_Ids_Gaveta_Carpeta para '{nombreCarpetaWs}' no encontró la carpeta o devolvió un DataSet/DataTable vacío o nulo.");
-                        }
-
-                        if (string.IsNullOrEmpty(idCarpetaRespuestaWs))
-                        {
-                            Console.WriteLine($"GetRespuestaDetalles: Carpeta '{nombreCarpetaWs}' no encontrada por nombre. Intentando crearla.");
-                            try
+                            if (string.IsNullOrEmpty(idCarpetaRespuestaWs))
                             {
-                                idCarpetaRespuestaWs = paginaActual.vs2020.Insertar_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, nombreCarpetaWs);
-                                if (string.IsNullOrEmpty(idCarpetaRespuestaWs))
+                                try { idCarpetaRespuestaWs = servicioVs2020.Insertar_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, nombreCarpetaWs); }
+                                catch (Exception exCrear) { Console.WriteLine($"GetRespuestaDetalles (Docs Historial Desempeño): Excepción Insertar_Carpeta '{nombreCarpetaWs}': {exCrear.Message}"); }
+                            }
+
+                            if (!string.IsNullOrEmpty(idCarpetaRespuestaWs))
+                            {
+                                DataSet dsDocumentos = null;
+                                try { dsDocumentos = servicioVs2020.Lista_De_Documentos(idCarpetaRespuestaWs); }
+                                catch (Exception exListar) { Console.WriteLine($"GetRespuestaDetalles (Docs Historial Desempeño): Excepción Lista_De_Documentos carpetaID '{idCarpetaRespuestaWs}': {exListar.Message}"); }
+
+                                if (dsDocumentos != null && dsDocumentos.Tables.Count > 0 && dsDocumentos.Tables[0].Rows.Count > 0)
                                 {
-                                    Console.WriteLine($"GetRespuestaDetalles: Falló la creación de la carpeta '{nombreCarpetaWs}' (Insertar_Carpeta devolvió vacío/nulo). No se pueden listar documentos.");
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"GetRespuestaDetalles: Carpeta '{nombreCarpetaWs}' creada con ID: {idCarpetaRespuestaWs}.");
-                                }
-                            }
-                            catch (Exception exCrearCarpeta)
-                            {
-                                Console.WriteLine($"GetRespuestaDetalles: Excepción llamando a Insertar_Carpeta para '{nombreCarpetaWs}': {exCrearCarpeta.Message}");
-                            }
-                        }
-
-                        if (!string.IsNullOrEmpty(idCarpetaRespuestaWs))
-                        {
-                            DataSet dsDocumentos = null;
-                            try
-                            {
-                                dsDocumentos = paginaActual.vs2020.Lista_De_Documentos(idCarpetaRespuestaWs);
-                            }
-                            catch (Exception exListarDocs)
-                            {
-                                Console.WriteLine($"GetRespuestaDetalles: Excepción llamando a Lista_De_Documentos para carpeta ID '{idCarpetaRespuestaWs}': {exListarDocs.Message}");
-                            }
-
-                            if (dsDocumentos != null && dsDocumentos.Tables.Count > 0 && dsDocumentos.Tables[0].Rows.Count > 0)
-                            {
-                                DataTable dtDocs = dsDocumentos.Tables[0];
-                                foreach (DataRow row in dtDocs.Rows)
-                                {
-                                    string ideObj = row.Table.Columns.Contains("ide_obj") ? row["ide_obj"]?.ToString() : null;
-                                    string desObj = row.Table.Columns.Contains("des_obj") ? row["des_obj"]?.ToString() : null;
-                                    if (!string.IsNullOrEmpty(ideObj) && !string.IsNullOrEmpty(desObj))
+                                    DataTable dtDocs = dsDocumentos.Tables[0];
+                                    foreach (DataRow row in dtDocs.Rows)
                                     {
-                                        datosDocs += $"Doc.aspx?num={HttpUtility.UrlEncode(ideObj)},{HttpUtility.HtmlEncode(desObj)}|";
+                                        string ideObj = row.Table.Columns.Contains("ide_obj") ? row["ide_obj"]?.ToString() : null;
+                                        string desObj = row.Table.Columns.Contains("des_obj") ? row["des_obj"]?.ToString() : null;
+                                        if (!string.IsNullOrEmpty(ideObj) && !string.IsNullOrEmpty(desObj))
+                                        {
+                                            datosDocsParaEsteItem += $"Doc.aspx?num={HttpUtility.UrlEncode(ideObj)},{HttpUtility.HtmlEncode(desObj)}|";
+                                        }
                                     }
+                                    respuestaItem.DatosDocs = datosDocsParaEsteItem.TrimEnd('|');
                                 }
-                                datosDocs = datosDocs.TrimEnd('|');
-                                Console.WriteLine($"GetRespuestaDetalles: Documentos encontrados para carpeta ID '{idCarpetaRespuestaWs}': {datosDocs}");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"GetRespuestaDetalles: Lista_De_Documentos para carpeta ID '{idCarpetaRespuestaWs}' no devolvió documentos o la tabla estaba vacía.");
                             }
                         }
-                        else
-                        {
-                            Console.WriteLine($"GetRespuestaDetalles: No se pudo obtener/crear un ID de carpeta para RespuestaID {respuestaExistente.IdRespuesta}. No se listarán documentos.");
-                        }
-                    }
-                    catch (Exception exBloqueDocumentosGeneral)
-                    {
-                        Console.WriteLine($"GetRespuestaDetalles: Error general en el bloque de obtención de documentos para RespuestaID {respuestaExistente.IdRespuesta}: {exBloqueDocumentosGeneral.ToString()}");
                     }
                 }
-                return new { success = true, data = new { DescripcionMeta = descripcionMeta, ObservacionGuardada = observacionGuardada, DatosDocs = datosDocs } };
+                // Devolver la descripción de la meta y el historial (que ahora contiene los documentos por item)
+                return new { success = true, data = new { DescripcionMeta = descripcionMeta, HistorialConDocumentos = historial } };
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error CRÍTICO en WebMethod GetRespuestaDetalles (MetaID: {metaId}, CodigoSemana: {codigoSemanaDeLaPestana}): {ex.ToString()}");
+                Console.WriteLine($"Error CRÍTICO en WebMethod GetRespuestaDetalles (MetaID: {metaId}): {ex.ToString()}");
                 return new { success = false, message = "Error crítico al obtener detalles de la respuesta." };
             }
         }
+
+
+
+
+
 
         protected void btModalGuardarAvance_Click(object sender, EventArgs e)
         {
@@ -523,7 +459,7 @@ namespace Gestor_Desempeno
             }
         }
 
-        
+
 
         // En Desempeno.aspx.cs
 

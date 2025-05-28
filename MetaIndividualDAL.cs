@@ -78,6 +78,98 @@ namespace Gestor_Desempeno
 
         // Dentro de tu clase MetaIndividualDAL en MetaIndividualDAL.cs
 
+        public List<MetaIndividualInfo> ObtenerMetasIndividualesPorUsuariosYEstado(List<string> usuarios, int idDetalleEstado)
+        {
+            List<MetaIndividualInfo> lista = new List<MetaIndividualInfo>();
+            if (usuarios == null || !usuarios.Any())
+            {
+                return lista;
+            }
+
+            var userParameters = new List<string>();
+            var sqlParameters = new List<SqlParameter>();
+            for (int i = 0; i < usuarios.Count; i++)
+            {
+                string paramName = $"@Usuario{i}";
+                userParameters.Add(paramName);
+                sqlParameters.Add(new SqlParameter(paramName, usuarios[i]));
+            }
+            string userInClause = string.Join(",", userParameters);
+
+            string query = $@"
+            SELECT
+                mi.Id_Meta_Individual, mi.Id_Meta_Departamental, mi.Usuario, mi.Descripcion, mi.Alcance,
+                mi.Peso_Ponderado_N4, mi.Peso_Ponderado_N5, mi.Fecha_Inicial, mi.Fecha_Final,
+                mi.Es_Finalizable, mi.Id_Detalle_Estado,
+                md.Descripcion AS DescripcionMetaDepartamental,
+                ae.Id_Area_Ejecutora,
+                ae.Nombre AS NombreAreaEjecutora,
+                m.Num_Meta AS NumMetaPadre,
+                o.Num_Objetivo AS NumObjetivoPadre,
+                o.Nombre AS NombreObjetivoPadre,
+                t.Id_Tipo_Objetivo,
+                t.Nombre AS NombreTipoObjetivo,
+                de.Descripcion AS DescripcionEstado
+            FROM dbo.Meta_Individual mi
+            INNER JOIN dbo.Meta_Departamental md ON mi.Id_Meta_Departamental = md.Id_Meta_Departamental
+            INNER JOIN dbo.Meta m ON md.Id_Meta = m.Id_Meta
+            INNER JOIN dbo.Objetivo o ON m.Id_Objetivo = o.Id_Objetivo
+            LEFT JOIN dbo.Tipo_Objetivo t ON o.Id_Tipo_Objetivo = t.Id_Tipo_Objetivo
+            LEFT JOIN dbo.Area_Ejecutora ae ON md.Id_Area_Ejecutora = ae.Id_Area_Ejecutora
+            LEFT JOIN dbo.Detalle_Estado de ON mi.Id_Detalle_Estado = de.Id_Detalle_Estado
+            WHERE mi.Usuario IN ({userInClause}) AND mi.Id_Detalle_Estado = @IdDetalleEstado
+            ORDER BY mi.Usuario, mi.Fecha_Final DESC, m.Num_Meta";
+
+            using (SqlConnection con = new SqlConnection(GetConnectionString()))
+            {
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddRange(sqlParameters.ToArray());
+                    cmd.Parameters.AddWithValue("@IdDetalleEstado", idDetalleEstado);
+
+                    try
+                    {
+                        con.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                lista.Add(new MetaIndividualInfo
+                                {
+                                    IdMetaIndividual = Convert.ToInt32(reader["Id_Meta_Individual"]),
+                                    IdMetaDepartamental = reader["Id_Meta_Departamental"] != DBNull.Value ? Convert.ToInt32(reader["Id_Meta_Departamental"]) : (int?)null,
+                                    Usuario = reader["Usuario"]?.ToString() ?? string.Empty,
+                                    Descripcion = reader["Descripcion"]?.ToString() ?? string.Empty,
+                                    Alcance = reader["Alcance"]?.ToString() ?? string.Empty,
+                                    PesoPonderadoN4 = reader["Peso_Ponderado_N4"] != DBNull.Value ? Convert.ToInt32(reader["Peso_Ponderado_N4"]) : (int?)null,
+                                    PesoPonderadoN5 = reader["Peso_Ponderado_N5"] != DBNull.Value ? Convert.ToInt32(reader["Peso_Ponderado_N5"]) : (int?)null,
+                                    FechaInicial = reader["Fecha_Inicial"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha_Inicial"]) : (DateTime?)null,
+                                    FechaFinal = reader["Fecha_Final"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha_Final"]) : (DateTime?)null,
+                                    EsFinalizable = reader["Es_Finalizable"] != DBNull.Value ? Convert.ToBoolean(reader["Es_Finalizable"]) : (bool?)null,
+                                    IdDetalleEstado = reader["Id_Detalle_Estado"] != DBNull.Value ? Convert.ToInt32(reader["Id_Detalle_Estado"]) : (int?)null,
+                                    DescripcionMetaDepartamental = reader["DescripcionMetaDepartamental"]?.ToString() ?? "N/A",
+                                    IdAreaEjecutora = reader["Id_Area_Ejecutora"] != DBNull.Value ? Convert.ToInt32(reader["Id_Area_Ejecutora"]) : (int?)null,
+                                    NombreAreaEjecutora = reader["NombreAreaEjecutora"]?.ToString() ?? "N/A",
+                                    NumMetaPadre = reader["NumMetaPadre"] != DBNull.Value ? Convert.ToInt32(reader["NumMetaPadre"]) : (int?)null,
+                                    NumObjetivoPadre = reader["NumObjetivoPadre"] != DBNull.Value ? Convert.ToInt32(reader["NumObjetivoPadre"]) : (int?)null,
+                                    NombreObjetivoPadre = reader["NombreObjetivoPadre"]?.ToString() ?? "N/A",
+                                    IdTipoObjetivo = reader["Id_Tipo_Objetivo"] != DBNull.Value ? Convert.ToInt32(reader["Id_Tipo_Objetivo"]) : (int?)null,
+                                    NombreTipoObjetivo = reader["NombreTipoObjetivo"]?.ToString() ?? "N/A",
+                                    DescripcionEstado = reader["DescripcionEstado"]?.ToString() ?? "N/A"
+                                });
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en ObtenerMetasIndividualesPorUsuariosYEstado: {ex.Message}");
+                        throw;
+                    }
+                }
+            }
+            return lista;
+        }
+
         public bool ActualizarEstadoMetaIndividual(int idMetaIndividual, int nuevoIdDetalleEstado)
         {
             string query = @"UPDATE dbo.Meta_Individual 
