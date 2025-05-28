@@ -82,8 +82,8 @@
 
         <%-- Campo: Es Finalizable --%>
         <div class="mb-3 form-check">
-            <asp:CheckBox ID="chkEsFinalizable" runat="server" CssClass="form-check-input" />
-            <label class="form-check-label" for="<%= chkEsFinalizable.ClientID %>">Marcar tarea como semanal</label>
+            <asp:CheckBox ID="chkEsFinalizable" runat="server" CssClass="form-check-input" Checked="false" Visible="false" />
+            
         </div>
 
         <%-- Botón para Guardar --%>

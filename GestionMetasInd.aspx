@@ -221,11 +221,8 @@
                                         <%-- Etiqueta "fantasma" para alineación si otros campos tienen etiqueta arriba --%>
                                         <%-- O puedes quitarla si no es necesaria para la alineación vertical con otros campos --%>
                                         <div class="form-check">
-                                            <asp:CheckBox ID="chkModalFinalizable" runat="server" CssClass="form-check-input" />
-                                            <label class="form-check-label" for="<%= chkModalFinalizable.ClientID %>">
-                                                Semanal
-           
-                                            </label>
+                                            <asp:CheckBox ID="chkModalFinalizable" runat="server" CssClass="form-check-input" Checked="true" Visible="false" />
+                                            
                                         </div>
                                     </div>
                                 </div>
