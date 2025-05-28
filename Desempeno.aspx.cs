@@ -295,43 +295,38 @@ namespace Gestor_Desempeno
 
 
 
+        // Dentro de la clase Desempeno en Desempeno.aspx.cs
+
         [WebMethod(EnableSession = true)]
         public static object GetRespuestaDetalles(int metaId, bool esFinalizable, string codigoSemanaDeLaPestana)
         {
-            // 'esFinalizable' y 'codigoSemanaDeLaPestana' pueden ser menos relevantes ahora para lo que devuelve este método,
-            // pero podrían seguir siendo útiles si el modal se comporta diferente o si necesitas algún contexto de la llamada.
-            // Por ahora, nos centraremos en devolver el historial completo para 'metaId'.
-
             string currentUser = HttpContext.Current.Session["UsuarioID"]?.ToString();
             if (string.IsNullOrEmpty(currentUser))
             {
                 return new { success = false, message = "Error: Sesión de usuario no encontrada." };
             }
 
-            // Necesitaremos acceso a las instancias DAL y al servicio vs2020.
-            // Como es un método estático, instanciamos lo necesario aquí.
             MetaIndividualDAL localMetaIndDAL = new MetaIndividualDAL();
             RespuestaDAL localRespuestaDAL = new RespuestaDAL();
-            apivs2020.wsapi servicioVs2020 = new apivs2020.wsapi(); // Instancia del servicio de documentos
+            apivs2020.wsapi servicioVs2020 = new apivs2020.wsapi();
 
             try
             {
                 MetaIndividualInfo metaInfo = localMetaIndDAL.ObtenerMetaIndividualPorId(metaId);
                 string descripcionMeta = metaInfo?.Descripcion ?? "Descripción de meta no encontrada.";
 
-                // Obtener el historial de todas las respuestas para esta metaId
-                List<RespuestaInfo> historial = localRespuestaDAL.ObtenerHistorialRespuestas(metaId); // Usa el método que ya tienes
+                // Obtener el historial. El método modificado en el DAL usará codigoSemanaDeLaPestana para filtrar
+                // si es un código de semana específico, o mostrará todo si es "0000000" (para vencidas).
+                List<RespuestaInfo> historial = localRespuestaDAL.ObtenerHistorialRespuestas(metaId, codigoSemanaDeLaPestana);
 
-                if (historial != null && historial.Any())
+                if (historial != null) // Ya no es necesario && historial.Any() aquí, el procesamiento de documentos lo maneja
                 {
-                    // Leer la configuración del Web.config para el servicio de documentos
                     string wsUsuario = ConfigurationManager.AppSettings["Usuario"];
                     string wsClave = ConfigurationManager.AppSettings["Clave"];
                     string wsArchivador = ConfigurationManager.AppSettings["Archivador"];
                     string wsGaveta = ConfigurationManager.AppSettings["Gaveta"];
                     string wsLlave = ConfigurationManager.AppSettings["Llave"];
 
-                    // Iterar sobre cada respuesta en el historial para obtener sus documentos
                     foreach (RespuestaInfo respuestaItem in historial)
                     {
                         if (respuestaItem.IdRespuesta > 0)
@@ -340,7 +335,6 @@ namespace Gestor_Desempeno
                             string idCarpetaRespuestaWs = "";
                             string nombreCarpetaWs = respuestaItem.IdRespuesta.ToString();
 
-                            // Lógica para obtener idCarpetaRespuestaWs y luego los documentos (adaptada de RevisionMetasSubordinados)
                             DataSet dsCarpetaInfo = null;
                             try { dsCarpetaInfo = servicioVs2020.Devuelve_Ids_Gaveta_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, nombreCarpetaWs); }
                             catch (Exception exServicio) { Console.WriteLine($"GetRespuestaDetalles (Docs Historial Desempeño): Excepción Devuelve_Ids_Gaveta_Carpeta para '{nombreCarpetaWs}': {exServicio.Message}"); }
@@ -383,7 +377,6 @@ namespace Gestor_Desempeno
                         }
                     }
                 }
-                // Devolver la descripción de la meta y el historial (que ahora contiene los documentos por item)
                 return new { success = true, data = new { DescripcionMeta = descripcionMeta, HistorialConDocumentos = historial } };
             }
             catch (Exception ex)

@@ -33,20 +33,35 @@ namespace Gestor_Desempeno
 
         // En tu clase RespuestaDAL dentro de RespuestaDAL.cs
 
-        public List<RespuestaInfo> ObtenerHistorialRespuestas(int idMetaIndividual)
+        // Modifica la firma del método para incluir codigoSemanaFiltro
+        public List<RespuestaInfo> ObtenerHistorialRespuestas(int idMetaIndividual, string codigoSemanaFiltro = null)
         {
             List<RespuestaInfo> historial = new List<RespuestaInfo>();
-            // Esta query trae todas las columnas de Respuesta para la meta dada, ordenadas por la más reciente.
+
             string query = @"SELECT Id_Respuesta, Id_Meta_Individual, Descripcion, Fecha_Entregado, Id_Detalle_Estado, Codigo_Semana 
                      FROM dbo.Respuesta 
-                     WHERE Id_Meta_Individual = @IdMetaIndividual 
-                     ORDER BY Fecha_Entregado DESC";
+                     WHERE Id_Meta_Individual = @IdMetaIndividual";
 
-            using (SqlConnection con = new SqlConnection(GetConnectionString())) // Asegúrate que GetConnectionString() exista y funcione
+            // Si se proporciona un codigoSemanaFiltro y NO es "0000000" (que significa mostrar todo para vencidas),
+            // entonces filtramos por ese código de semana.
+            if (!string.IsNullOrEmpty(codigoSemanaFiltro) && codigoSemanaFiltro != "0000000")
+            {
+                query += " AND Codigo_Semana = @CodigoSemanaFiltro";
+            }
+
+            query += " ORDER BY Fecha_Entregado DESC";
+
+            using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {
                 using (SqlCommand cmd = new SqlCommand(query, con))
                 {
                     cmd.Parameters.AddWithValue("@IdMetaIndividual", idMetaIndividual);
+
+                    if (!string.IsNullOrEmpty(codigoSemanaFiltro) && codigoSemanaFiltro != "0000000")
+                    {
+                        cmd.Parameters.AddWithValue("@CodigoSemanaFiltro", codigoSemanaFiltro);
+                    }
+
                     try
                     {
                         con.Open();
@@ -58,11 +73,10 @@ namespace Gestor_Desempeno
                                 {
                                     IdRespuesta = Convert.ToInt32(reader["Id_Respuesta"]),
                                     IdMetaIndividual = reader["Id_Meta_Individual"] != DBNull.Value ? Convert.ToInt32(reader["Id_Meta_Individual"]) : (int?)null,
-                                    Descripcion = reader["Descripcion"]?.ToString() ?? string.Empty, // Importante para tu requerimiento
+                                    Descripcion = reader["Descripcion"]?.ToString() ?? string.Empty,
                                     FechaEntregado = reader["Fecha_Entregado"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha_Entregado"]) : (DateTime?)null,
                                     IdDetalleEstado = reader["Id_Detalle_Estado"] != DBNull.Value ? Convert.ToInt32(reader["Id_Detalle_Estado"]) : (int?)null,
                                     CodigoSemana = reader["Codigo_Semana"]?.ToString()
-                                    // Nota: RespuestaInfo también tiene NombreArchivo, pero no está en esta query. Si lo necesitas, añádelo.
                                 });
                             }
                         }
@@ -70,12 +84,11 @@ namespace Gestor_Desempeno
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Error en RespuestaDAL.ObtenerHistorialRespuestas: {ex.Message}");
-                        // Considera un logging más robusto aquí.
-                        throw; // Relanzar para que la capa superior sepa del error.
+                        throw;
                     }
                 }
             }
-            return historial; // Esto debería devolver la lista de respuestas si existen.
+            return historial;
         }
 
         // Nuevo método para determinar la fecha de la última respuesta del subordinado (para "Respondida Fuera de Tiempo")
