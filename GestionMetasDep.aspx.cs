@@ -64,7 +64,7 @@ namespace Gestor_Desempeno
                 int? tipoObjFiltro = GetNullableIntFromDDL(ddlTipoObjetivoFiltro);
                 int? numMetaFiltro = GetNullableIntFromTextBox(txtNumMetaFiltro);
 
-                List<MetaDepartamentalInfo> metasDep = metaDepDAL.ObtenerMetasDepartamentales(tipoObjFiltro, numMetaFiltro);
+                List<MetaDepartamentalInfo> metasDep = metaDepDAL.ObtenerMetasDepartamentales(Session["UsuarioID"].ToString(), tipoObjFiltro, numMetaFiltro);
                 gvMetasDep.DataSource = metasDep;
                 gvMetasDep.DataBind();
                 litMensaje.Visible = false;
@@ -115,7 +115,7 @@ namespace Gestor_Desempeno
         }
         private void LoadAreasDropdown(DropDownList ddl, string initialText)
         {
-            if (ddl == null) return; try { ddl.DataSource = areaDAL.ObtenerAreas(); ddl.DataTextField = "Nombre"; ddl.DataValueField = "Id_Area_Ejecutora"; ddl.DataBind(); ddl.Items.Insert(0, new ListItem(initialText, "0")); } catch (Exception ex) { MostrarMensaje($"Error cargando áreas: {ex.Message}", false); }
+            if (ddl == null) return; try { ddl.DataSource = areaDAL.ObtenerAreas(Session["UsuarioID"].ToString()); ddl.DataTextField = "Nombre"; ddl.DataValueField = "Id_Area_Ejecutora"; ddl.DataBind(); ddl.Items.Insert(0, new ListItem(initialText, "0")); } catch (Exception ex) { MostrarMensaje($"Error cargando áreas: {ex.Message}", false); }
         }
         private void LoadEstadosDropdown(DropDownList ddl, string initialText, int? idClaseFiltro = null)
         {

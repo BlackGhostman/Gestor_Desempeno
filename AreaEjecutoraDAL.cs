@@ -27,11 +27,14 @@ namespace Gestor_Desempeno
         }
 
         // Método para obtener todas las áreas ejecutoras
-        public List<AreaEjecutoraInfo> ObtenerAreas()
+        public List<AreaEjecutoraInfo> ObtenerAreas(string Usuario)
         {
             List<AreaEjecutoraInfo> listaAreas = new List<AreaEjecutoraInfo>();
             // No hay columna 'Estado', así que obtenemos todas
-            string query = "SELECT Id_Area_Ejecutora, Nombre FROM dbo.Area_Ejecutora ORDER BY Nombre";
+            string query = "SELECT ae.Id_Area_Ejecutora, ae.Nombre FROM dbo.Area_Ejecutora ae" +
+                        " inner join dbo.Encargado_Area ea on ae.Id_Area_Ejecutora = ea.Id_Area_Ejecutora" +
+                        $" where ea.Usuario = '{Usuario}'" +
+                        " ORDER BY Nombre";
 
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {

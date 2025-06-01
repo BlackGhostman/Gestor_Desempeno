@@ -70,11 +70,11 @@ namespace Gestor_Desempeno
 
             if (ID_ESTADO_INACTIVO_META_IND == null)
             {
-                ID_ESTADO_INACTIVO_META_IND = detalleEstadoDAL.ObtenerIdEstadoPorDescripcion("Inactivo", ID_CLASE_META_IND);
+                ID_ESTADO_INACTIVO_META_IND = detalleEstadoDAL.ObtenerIdEstadoPorDescripcion("Cerrado", ID_CLASE_META_IND);
                 if (ID_ESTADO_INACTIVO_META_IND == null)
                 {
-                    Console.WriteLine($"CRITICAL ERROR: Could not find 'Inactivo' state ID for Clase {ID_CLASE_META_IND}.");
-                    if (!IsPostBack) MostrarMensaje("Error de configuración: No se encontró el estado inactivo para metas.", false);
+                    Console.WriteLine($"CRITICAL ERROR: Could not find 'Cerrado' state ID for Clase {ID_CLASE_META_IND}.");
+                    if (!IsPostBack) MostrarMensaje("Error de configuración: No se encontró el estado Cerrado para metas.", false);
                 }
             }
 

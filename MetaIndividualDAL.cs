@@ -204,33 +204,40 @@ namespace Gestor_Desempeno
 
         // ** ESTE ES EL MÉTODO QUE DEBE EXISTIR Y SER LLAMADO **
         // Método para obtener Metas Individuales con filtros
-        public List<MetaIndividualInfo> ObtenerMetasIndividuales(int? idTipoObjetivoFiltro = null, int? numMetaFiltro = null, int? idAreaEjecutoraFiltro = null, string usuarioFiltro = null)
+
+
+        public List<MetaIndividualInfo> ObtenerMetasIndividuales(
+        int? idTipoObjetivoFiltro = null,
+        int? numMetaFiltro = null,
+        int? idAreaEjecutoraFiltro = null,
+        string usuarioFiltro = null,
+        string usuariosFiltro = null) // Ejemplo de entrada: "'rmayorga','aacuna','jmanzanares'"
         {
             List<MetaIndividualInfo> lista = new List<MetaIndividualInfo>();
             var parameters = new Dictionary<string, object>();
 
             StringBuilder queryBuilder = new StringBuilder(@"
-                SELECT
-                    mi.Id_Meta_Individual, mi.Id_Meta_Departamental, mi.Usuario, mi.Descripcion, mi.Alcance,
-                    mi.Peso_Ponderado_N4, mi.Peso_Ponderado_N5, mi.Fecha_Inicial, mi.Fecha_Final,
-                    mi.Es_Finalizable, mi.Id_Detalle_Estado,
-                    md.Descripcion AS DescripcionMetaDepartamental,
-                    ae.Id_Area_Ejecutora,
-                    ae.Nombre AS NombreAreaEjecutora,
-                    m.Num_Meta AS NumMetaPadre,
-                    o.Num_Objetivo AS NumObjetivoPadre, -- Added Num_Objetivo
-                    o.Nombre AS NombreObjetivoPadre,   -- Added Nombre Objetivo
-                    t.Id_Tipo_Objetivo,
-                    t.Nombre AS NombreTipoObjetivo,
-                    de.Descripcion AS DescripcionEstado
-                FROM dbo.Meta_Individual mi
-                INNER JOIN dbo.Meta_Departamental md ON mi.Id_Meta_Departamental = md.Id_Meta_Departamental
-                INNER JOIN dbo.Meta m ON md.Id_Meta = m.Id_Meta
-                INNER JOIN dbo.Objetivo o ON m.Id_Objetivo = o.Id_Objetivo
-                LEFT JOIN dbo.Tipo_Objetivo t ON o.Id_Tipo_Objetivo = t.Id_Tipo_Objetivo
-                LEFT JOIN dbo.Area_Ejecutora ae ON md.Id_Area_Ejecutora = ae.Id_Area_Ejecutora
-                LEFT JOIN dbo.Detalle_Estado de ON mi.Id_Detalle_Estado = de.Id_Detalle_Estado
-            ");
+            SELECT
+                mi.Id_Meta_Individual, mi.Id_Meta_Departamental, mi.Usuario, mi.Descripcion, mi.Alcance,
+                mi.Peso_Ponderado_N4, mi.Peso_Ponderado_N5, mi.Fecha_Inicial, mi.Fecha_Final,
+                mi.Es_Finalizable, mi.Id_Detalle_Estado,
+                md.Descripcion AS DescripcionMetaDepartamental,
+                ae.Id_Area_Ejecutora,
+                ae.Nombre AS NombreAreaEjecutora,
+                m.Num_Meta AS NumMetaPadre,
+                o.Num_Objetivo AS NumObjetivoPadre,
+                o.Nombre AS NombreObjetivoPadre,
+                t.Id_Tipo_Objetivo,
+                t.Nombre AS NombreTipoObjetivo,
+                de.Descripcion AS DescripcionEstado
+            FROM dbo.Meta_Individual mi
+            INNER JOIN dbo.Meta_Departamental md ON mi.Id_Meta_Departamental = md.Id_Meta_Departamental
+            INNER JOIN dbo.Meta m ON md.Id_Meta = m.Id_Meta
+            INNER JOIN dbo.Objetivo o ON m.Id_Objetivo = o.Id_Objetivo
+            LEFT JOIN dbo.Tipo_Objetivo t ON o.Id_Tipo_Objetivo = t.Id_Tipo_Objetivo
+            LEFT JOIN dbo.Area_Ejecutora ae ON md.Id_Area_Ejecutora = ae.Id_Area_Ejecutora
+            LEFT JOIN dbo.Detalle_Estado de ON mi.Id_Detalle_Estado = de.Id_Detalle_Estado
+        ");
 
             StringBuilder whereClause = new StringBuilder();
 
@@ -252,30 +259,50 @@ namespace Gestor_Desempeno
             }
             if (!string.IsNullOrWhiteSpace(usuarioFiltro))
             {
-                // Use LIKE for partial matching, or = for exact match
-                // For exact match as requested by user context:
                 whereClause.Append(" AND mi.Usuario = @UsuarioFiltro");
                 parameters.Add("@UsuarioFiltro", usuarioFiltro.Trim());
-                // If partial match was needed:
-                // whereClause.Append(" AND mi.Usuario LIKE @UsuarioFiltro");
-                // parameters.Add("@UsuarioFiltro", $"%{usuarioFiltro.Trim()}%"); // Add wildcards for LIKE
             }
-            // Optional: Filter by active state?
-            // whereClause.Append(" AND de.Descripcion = 'Activo'"); // Or by ID if known
 
+            // ----- SECCIÓN CORREGIDA PARA usuariosFiltro (CON ELIMINACIÓN DE COMILLAS SIMPLES) -----
+            if (!string.IsNullOrWhiteSpace(usuariosFiltro))
+            {
+                string[] usuarios = usuariosFiltro.Trim() // Trim general de la cadena completa
+                                                 .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                                 .Select(u => u.Trim().Trim('\'')) // Trim de espacios Y LUEGO trim de comillas simples (') de cada parte
+                                                 .Where(u => !string.IsNullOrWhiteSpace(u)) // Filtra elementos vacíos que pudieron quedar (si un usuario era solo "''" o ",' ',")
+                                                 .ToArray();
+
+                if (usuarios.Length > 0)
+                {
+                    List<string> paramNombres = new List<string>();
+                    for (int i = 0; i < usuarios.Length; i++)
+                    {
+                        // 'usuarios[i]' ahora contendrá el nombre de usuario sin las comillas simples externas.
+                        // Ejemplo: "rmayorga" en lugar de "'rmayorga'"
+                        string paramNombre = $"@UsuariosFiltroParam{i}";
+                        paramNombres.Add(paramNombre);
+                        parameters.Add(paramNombre, usuarios[i]); // Se añade el nombre de usuario limpio
+                    }
+                    whereClause.Append($" AND mi.Usuario IN ({string.Join(",", paramNombres)})");
+                }
+            }
+            // ----- FIN DE LA SECCIÓN CORREGIDA -----
 
             if (whereClause.Length > 0)
             {
-                queryBuilder.Append(" WHERE ").Append(whereClause.ToString().Substring(5)); // Remove leading " AND "
+                queryBuilder.Append(" WHERE ").Append(whereClause.ToString().Substring(5)); // Remueve el primer " AND "
             }
 
-            queryBuilder.Append(" ORDER BY mi.Usuario, m.Num_Meta"); // Orden sugerido
+            queryBuilder.Append(" ORDER BY mi.Usuario, m.Num_Meta");
 
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {
                 using (SqlCommand cmd = new SqlCommand(queryBuilder.ToString(), con))
                 {
-                    foreach (var param in parameters) { cmd.Parameters.AddWithValue(param.Key, param.Value); }
+                    foreach (var param in parameters)
+                    {
+                        cmd.Parameters.AddWithValue(param.Key, param.Value);
+                    }
 
                     try
                     {
@@ -285,7 +312,7 @@ namespace Gestor_Desempeno
                             while (reader.Read())
                             {
                                 lista.Add(new MetaIndividualInfo
-                                { /* ... mapping ... */
+                                {
                                     IdMetaIndividual = Convert.ToInt32(reader["Id_Meta_Individual"]),
                                     IdMetaDepartamental = reader["Id_Meta_Departamental"] != DBNull.Value ? Convert.ToInt32(reader["Id_Meta_Departamental"]) : (int?)null,
                                     Usuario = reader["Usuario"]?.ToString() ?? string.Empty,
@@ -301,8 +328,8 @@ namespace Gestor_Desempeno
                                     IdAreaEjecutora = reader["Id_Area_Ejecutora"] != DBNull.Value ? Convert.ToInt32(reader["Id_Area_Ejecutora"]) : (int?)null,
                                     NombreAreaEjecutora = reader["NombreAreaEjecutora"]?.ToString() ?? "N/A",
                                     NumMetaPadre = reader["NumMetaPadre"] != DBNull.Value ? Convert.ToInt32(reader["NumMetaPadre"]) : (int?)null,
-                                    NumObjetivoPadre = reader["NumObjetivoPadre"] != DBNull.Value ? Convert.ToInt32(reader["NumObjetivoPadre"]) : (int?)null, // Map new field
-                                    NombreObjetivoPadre = reader["NombreObjetivoPadre"]?.ToString() ?? "N/A", // Map new field
+                                    NumObjetivoPadre = reader["NumObjetivoPadre"] != DBNull.Value ? Convert.ToInt32(reader["NumObjetivoPadre"]) : (int?)null,
+                                    NombreObjetivoPadre = reader["NombreObjetivoPadre"]?.ToString() ?? "N/A",
                                     IdTipoObjetivo = reader["Id_Tipo_Objetivo"] != DBNull.Value ? Convert.ToInt32(reader["Id_Tipo_Objetivo"]) : (int?)null,
                                     NombreTipoObjetivo = reader["NombreTipoObjetivo"]?.ToString() ?? "N/A",
                                     DescripcionEstado = reader["DescripcionEstado"]?.ToString() ?? "N/A"
@@ -310,7 +337,12 @@ namespace Gestor_Desempeno
                             }
                         }
                     }
-                    catch (Exception ex) { Console.WriteLine("Error en ObtenerMetasIndividuales: " + ex.Message); throw; }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error en ObtenerMetasIndividuales: " + ex.Message);
+                        // Considera un logging más robusto o una gestión de excepciones específica para tu aplicación
+                        throw;
+                    }
                 }
             }
             return lista;
@@ -320,7 +352,7 @@ namespace Gestor_Desempeno
         public List<MetaIndividualInfo> ObtenerMetasIndividualesPorUsuario(string usuario)
         {
             // This method now simply calls the main filtering method with only the user filter applied
-            return ObtenerMetasIndividuales(null, null, null, usuario);
+            return ObtenerMetasIndividuales(null, null, null, usuario,null);
         }
 
         // Método para "Metas Rápidas" que se alinea con la tabla [Meta_Individual].

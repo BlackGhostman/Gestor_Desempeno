@@ -6,8 +6,7 @@ using System.Web.UI.WebControls;
 using System.Web.Services; // Needed for WebMethod
 using System.Globalization; // Needed for CalendarWeekRule
 using System.Web.Script.Serialization; // Needed for JSON response
-
-
+using System.Data;
 
 namespace Gestor_Desempeno
 {
@@ -28,6 +27,7 @@ namespace Gestor_Desempeno
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            UsuariosXJefe();
             // --- Security Checks ---
             if (Session["UsuarioID"] == null) { Response.Redirect("~/Login.aspx?mensaje=SesionExpirada"); return; }
             bool necesitaCambiar = false;
@@ -121,7 +121,7 @@ namespace Gestor_Desempeno
                 // Si "-- Seleccione Usuario --" tiene valor "0", lo convertimos a null para no filtrar
                 string usuarioFiltro = (usuarioFiltroSeleccionado == "0" || string.IsNullOrEmpty(usuarioFiltroSeleccionado)) ? null : usuarioFiltroSeleccionado;
 
-                List<MetaIndividualInfo> metasInd = metaIndDAL.ObtenerMetasIndividuales(tipoObjFiltro, numMetaFiltro, areaFiltro, usuarioFiltro);
+                List<MetaIndividualInfo> metasInd = metaIndDAL.ObtenerMetasIndividuales(tipoObjFiltro, numMetaFiltro, areaFiltro, usuarioFiltro, UsuariosXJefe());
                 gvMetasInd.DataSource = metasInd;
                 gvMetasInd.DataBind();
                 litMensaje.Visible = false;
@@ -135,6 +135,8 @@ namespace Gestor_Desempeno
             }
         }
 
+        
+
         // Cargar DropDowns de Filtros
         private void LoadFilterDropdowns()
         {
@@ -142,8 +144,41 @@ namespace Gestor_Desempeno
             LoadAreasDropdown(ddlAreaFiltro, "-- Todas las Áreas --");
         }
 
-        // Cargar DropDowns del Modal Add/Edit
-        private void LoadModalDropdowns()
+        public string UsuariosXJefe()
+        {
+            
+            try
+            {
+                string cadena = "";
+                DataTable dtColaboradores = apiRH.ObtenerColaboradoresUsuarioJefe(Session["UsuarioID"].ToString());
+                for (int i = 0; i < dtColaboradores.Rows.Count; i++)
+                {
+                    if(i == 0)
+                    {
+                        cadena =  $"'{dtColaboradores.Rows[i][0].ToString()}'";
+                    }
+                    else
+                    {
+                        cadena = cadena + $",'{dtColaboradores.Rows[i][0].ToString()}'";
+                    }
+                   
+                }
+                return cadena;
+
+            }
+            catch (Exception)
+            {
+
+                return null;
+            }
+
+            
+        }
+
+
+
+    // Cargar DropDowns del Modal Add/Edit
+    private void LoadModalDropdowns()
         {
             LoadMetasDepDropdown(ddlModalMetaDep, "-- Seleccione Meta Dep. --");
             LoadEstadosDropdown(ddlModalEstado, "-- Seleccione Estado --", ID_CLASE_META_IND); // Filter by Class 4
@@ -157,13 +192,13 @@ namespace Gestor_Desempeno
         }
         private void LoadAreasDropdown(DropDownList ddl, string initialText)
         {
-            if (ddl == null) return; try { ddl.DataSource = areaDAL.ObtenerAreas(); ddl.DataTextField = "Nombre"; ddl.DataValueField = "Id_Area_Ejecutora"; ddl.DataBind(); ddl.Items.Insert(0, new ListItem(initialText, "0")); } catch (Exception ex) { MostrarMensaje($"Error cargando áreas: {ex.Message}", false); }
+            if (ddl == null) return; try { ddl.DataSource = areaDAL.ObtenerAreas(Session["UsuarioID"].ToString()); ddl.DataTextField = "Nombre"; ddl.DataValueField = "Id_Area_Ejecutora"; ddl.DataBind(); ddl.Items.Insert(0, new ListItem(initialText, "0")); } catch (Exception ex) { MostrarMensaje($"Error cargando áreas: {ex.Message}", false); }
         }
         private void LoadMetasDepDropdown(DropDownList ddl, string initialText)
         {
             if (ddl == null) return; try
             {
-                ddl.DataSource = metaDepDAL.ObtenerMetasDepartamentales();
+                ddl.DataSource = metaDepDAL.ObtenerMetasDepartamentales(Session["UsuarioID"].ToString());
                 ddl.DataTextField = "DisplayTextForDropdown";
                 ddl.DataValueField = "IdMetaDepartamental";
                 ddl.DataBind(); ddl.Items.Insert(0, new ListItem(initialText, "0"));

@@ -54,7 +54,7 @@ namespace Gestor_Desempeno
         {
             try
             {
-                List<AreaEjecutoraInfo> areas = areaDAL.ObtenerAreas();
+                List<AreaEjecutoraInfo> areas = areaDAL.ObtenerAreas(Session["UsuarioID"].ToString());
 
                 if (areas != null)
                 {

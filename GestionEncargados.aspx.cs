@@ -114,7 +114,7 @@ namespace Gestor_Desempeno
         {
             try
             {
-                List<AreaEjecutoraInfo> areas = areaDAL.ObtenerAreas(); // Obtener todas las áreas
+                List<AreaEjecutoraInfo> areas = areaDAL.ObtenerAreas(Session["UsuarioID"].ToString()); // Obtener todas las áreas
                 ddlAreas.DataSource = areas;
                 ddlAreas.DataTextField = "Nombre";
                 ddlAreas.DataValueField = "Id_Area_Ejecutora";
@@ -135,7 +135,7 @@ namespace Gestor_Desempeno
             if (ddl == null) return;
             try
             {
-                List<AreaEjecutoraInfo> areas = areaDAL.ObtenerAreas();
+                List<AreaEjecutoraInfo> areas = areaDAL.ObtenerAreas(Session["UsuarioID"].ToString());
                 ddl.DataSource = areas;
                 ddl.DataTextField = "Nombre";
                 ddl.DataValueField = "Id_Area_Ejecutora";

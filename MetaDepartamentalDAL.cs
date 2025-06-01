@@ -56,7 +56,7 @@ namespace Gestor_Desempeno
         private const int ID_CLASE_META_DEP = 3;
 
         // Método para obtener Metas Departamentales con filtros
-        public List<MetaDepartamentalInfo> ObtenerMetasDepartamentales(int? idTipoObjetivoFiltro = null, int? numMetaFiltro = null, int? idAreaEjecutoraFiltro = null) // Added Area filter
+        public List<MetaDepartamentalInfo> ObtenerMetasDepartamentales(string usuario, int? idTipoObjetivoFiltro = null, int? numMetaFiltro = null, int? idAreaEjecutoraFiltro = null) // Added Area filter
         {
             List<MetaDepartamentalInfo> lista = new List<MetaDepartamentalInfo>();
             var parameters = new Dictionary<string, object>();
@@ -78,7 +78,8 @@ namespace Gestor_Desempeno
                 LEFT JOIN dbo.Tipo_Objetivo t ON o.Id_Tipo_Objetivo = t.Id_Tipo_Objetivo
                 LEFT JOIN dbo.Area_Ejecutora ae ON md.Id_Area_Ejecutora = ae.Id_Area_Ejecutora
                 LEFT JOIN dbo.Detalle_Estado de ON md.Id_Detalle_Estado = de.Id_Detalle_Estado
-            ");
+				inner join dbo.Encargado_Area ea On ea.Id_Area_Ejecutora = ae.Id_Area_Ejecutora
+				where ea.Usuario = '" + usuario + "'");
 
             StringBuilder whereClause = new StringBuilder();
 
