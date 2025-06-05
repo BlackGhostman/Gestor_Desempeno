@@ -23,46 +23,91 @@ namespace Gestor_Desempeno
             }
         }
 
+        // En CambiarContrasena.aspx.cs
         protected void btnCambiarClave_Click(object sender, EventArgs e)
         {
-            // Doble verificación de sesión por si acaso
             if (Session["UsuarioID"] == null)
             {
                 Response.Redirect("~/Login.aspx?mensaje=SesionExpirada");
                 return;
             }
 
-            if (Page.IsValid) // Verifica los validadores del grupo "CambioPass"
+            if (Page.IsValid)
             {
                 string idUsuario = Session["UsuarioID"].ToString();
-                string nuevaClave = txtNuevaClave.Text; // ¡Texto plano!
-
-                // Opcional: Validar complejidad de la contraseña aquí si es necesario
-                // if (nuevaClave.Length < 8 || ...) { MostrarMensaje("La contraseña no cumple los requisitos...", false); return; }
+                string nuevaClave = txtNuevaClave.Text;
+                string contrasenaActual = txtContrasenaActual.Text; // Asumiendo que tienes este TextBox en tu .aspx
 
                 UsuarioDAL dal = new UsuarioDAL();
-                // ADVERTENCIA: Guarda la contraseña nueva en texto plano y desactiva el flag DebeCambiarContrasena
-                bool actualizado = dal.ActualizarContrasenaYDesactivarForzado(idUsuario, nuevaClave);
+                UsuarioInfo infoUsuario = dal.ObtenerInfoUsuario(idUsuario);
+
+                bool actualizado = false;
+
+                if (infoUsuario != null && !infoUsuario.EsExterno) // Usuario de Active Directory
+                {
+                    try
+                    {
+                        // --- INICIO CORRECCIÓN ERROR 1 ---
+                        if (string.IsNullOrWhiteSpace(contrasenaActual)) // Quitamos los () de contrasenaActual
+                        {
+                            MostrarMensaje("Debe ingresar su contraseña actual.", false);
+                            return;
+                        }
+                        // --- FIN CORRECCIÓN ERROR 1 ---
+
+                        actualizado = dal.CambiarContrasenaActiveDirectory(idUsuario, contrasenaActual, nuevaClave);
+
+                        if (actualizado)
+                        {
+                            // --- VERIFICAR QUE MÉTODO EXISTA (Error 2) ---
+                            // Esta línea asume que MarcarUsuarioParaCambioContrasenaEnDB está en UsuarioDAL.cs
+                            dal.MarcarUsuarioParaCambioContrasenaEnDB(idUsuario, false);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MostrarMensaje("Error al cambiar contraseña: " + ex.Message, false);
+                        return;
+                    }
+                }
+                else if (infoUsuario != null && infoUsuario.EsExterno)
+                {
+                    // ... (tu lógica para usuarios externos, idealmente con HASHING) ...
+                    // IMPORTANTE: Implementar HASHING aquí antes de guardar
+                    // string hashNuevaClave = GenerarHash(nuevaClave); // Método para hashear
+                    // actualizado = dal.ActualizarContrasenaYDesactivarForzado(idUsuario, hashNuevaClave); // Usar el método que guarda hasheado
+                    MostrarMensaje("ADVERTENCIA DE SEGURIDAD: Las contraseñas de usuarios externos se guardan en texto plano. Esto debe corregirse.", false);
+                    actualizado = dal.ActualizarContrasenaYDesactivarForzado(idUsuario, nuevaClave); // ¡NO SEGURO! ¡SOLO PARA PRUEBAS HASTA QUE IMPLEMENTES HASHING!
+                    if (actualizado)
+                    {
+                        // Para usuarios externos, ActualizarContrasenaYDesactivarForzado ya actualiza el flag.
+                    }
+                }
+                else
+                {
+                    MostrarMensaje("No se pudo encontrar la información del usuario.", false);
+                    return;
+                }
 
                 if (actualizado)
                 {
                     MostrarMensaje("Su contraseña ha sido actualizada correctamente. Ahora puede continuar.", true);
-                    // Ocultar campos y botón, mostrar enlace a Default
                     txtNuevaClave.Enabled = false;
                     txtConfirmarClave.Enabled = false;
+                    // txtContrasenaActual.Enabled = false; // Si lo agregaste
                     btnCambiarClave.Visible = false;
-                    // Podrías redirigir a Default.aspx o mostrar un enlace
-                    // Response.Redirect("~/Default.aspx");
                     hlVolverLoginLink.Text = "Ir a la página principal";
-                    hlVolverLoginLink.NavigateUrl = "~/Default.aspx";
+                    hlVolverLoginLink.NavigateUrl = "~/Default.aspx"; // O la página que corresponda
                     hlVolverLoginLink.Visible = true;
                 }
                 else
                 {
-                    MostrarMensaje("Error al actualizar la contraseña. Por favor, intente de nuevo.", false);
-                    hlVolverLoginLink.Text = "Volver a Inicio de Sesión";
-                    hlVolverLoginLink.NavigateUrl = "~/Login.aspx";
-                    hlVolverLoginLink.Visible = true;
+                    // Si no se actualizó y no fue por una excepción ya manejada (ej. error genérico para externos)
+                    if (infoUsuario != null && infoUsuario.EsExterno)
+                    {
+                        MostrarMensaje("Error al actualizar la contraseña. Por favor, intente de nuevo.", false);
+                    }
+                    // Para usuarios de AD, el error específico ya se mostró en el catch.
                 }
             }
         }

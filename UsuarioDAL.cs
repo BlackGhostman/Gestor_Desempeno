@@ -179,6 +179,119 @@ namespace Gestor_Desempeno
         }
 
 
+
+        public bool CambiarContrasenaActiveDirectory(string idUsuario, string contrasenaActual, string nuevaContrasena)
+        {
+            string domainName = ConfigurationManager.AppSettings["ActiveDirectoryDomain"];
+            if (string.IsNullOrEmpty(domainName))
+            {
+                Console.WriteLine("Error: La clave 'ActiveDirectoryDomain' no está configurada.");
+                return false;
+            }
+
+            try
+            {
+                using (PrincipalContext pc = new PrincipalContext(ContextType.Domain, domainName))
+                {
+                    UserPrincipal user = UserPrincipal.FindByIdentity(pc, IdentityType.SamAccountName, idUsuario);
+                    if (user != null)
+                    {
+                        // El método ChangePassword requiere la contraseña actual.
+                        user.ChangePassword(contrasenaActual, nuevaContrasena);
+                        // Si el cambio es exitoso y estás almacenando el flag `DebeCambiarContrasena`
+                        // localmente, asegúrate de resetearlo aquí en tu base de datos.
+                        // ActualizarContrasenaYDesactivarForzado(idUsuario, ""); // Podrías pasar la nueva contraseña (hasheada!) o simplemente resetear el flag
+                        // Idealmente, no almacenes la contraseña de AD en tu BD local.
+                        // Solo resetea el flag:
+                        // MarcarUsuarioParaCambioContrasenaEnDB(idUsuario, false); // Método hipotético
+                        return true;
+                    }
+                }
+            }
+            catch (PasswordException ex)
+            {
+                // Contraseña no cumple políticas de complejidad, historial, etc.
+                Console.WriteLine($"Error de contraseña en AD para '{idUsuario}': {ex.Message}");
+                // Puedes lanzar una excepción personalizada con un mensaje amigable
+                throw new Exception("La nueva contraseña no cumple con las políticas de seguridad del dominio (ej: complejidad, historial).");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al cambiar contraseña en AD para '{idUsuario}': {ex.Message}");
+                // Considera un manejo de errores más específico si es necesario
+                throw; // Relanza para que la capa superior lo maneje
+            }
+            return false;
+        }
+
+        // Alternativa si la contraseña está expirada y AD permite SetPassword (generalmente necesita permisos elevados o es el propio usuario autenticado)
+        // Este método NO requiere la contraseña antigua, pero debe usarse con precaución.
+        public bool ForzarCambioContrasenaActiveDirectory(string idUsuario, string nuevaContrasena)
+        {
+            string domainName = ConfigurationManager.AppSettings["ActiveDirectoryDomain"];
+            // ... (similar al anterior) ...
+            try
+            {
+                using (PrincipalContext pc = new PrincipalContext(ContextType.Domain, domainName))
+                {
+                    UserPrincipal user = UserPrincipal.FindByIdentity(pc, IdentityType.SamAccountName, idUsuario);
+                    if (user != null)
+                    {
+                        user.SetPassword(nuevaContrasena); // Establece directamente la contraseña.
+                                                           // Útil si "User must change password at next logon" está activo.
+                                                           // Asegúrate de que la cuenta no esté bloqueada y que esté habilitada.
+                                                           // user.UnlockAccount(); // Si estuviera bloqueada
+                                                           // user.ExpirePasswordNow(); // Para forzar el cambio, aunque ya estamos cambiándola.
+
+                        // Después de un SetPassword exitoso, el flag "User must change password at next logon"
+                        // generalmente se desactiva automáticamente en AD.
+                        // Actualiza tu flag local en la BD:
+                        // MarcarUsuarioParaCambioContrasenaEnDB(idUsuario, false); // Método hipotético
+                        return true;
+                    }
+                }
+            }
+            // ... (manejo de excepciones similar, PasswordException puede ocurrir por políticas) ...
+            catch (PasswordException ex)
+            {
+                Console.WriteLine($"Error de contraseña en AD para '{idUsuario}': {ex.Message}");
+                throw new Exception("La nueva contraseña no cumple con las políticas de seguridad del dominio.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al forzar cambio de contraseña en AD para '{idUsuario}': {ex.Message}");
+                throw;
+            }
+            return false;
+        }
+
+
+        // Método hipotético para actualizar solo el flag en tu BD
+        public void MarcarUsuarioParaCambioContrasenaEnDB(string idUsuario, bool debeCambiar)
+        {
+            string query = @"UPDATE dbo.SEG_USUARIO SET DebeCambiarContrasena = @DebeCambiar
+                     WHERE ID_USUARIO = @IdUsuario";
+            using (SqlConnection con = new SqlConnection(GetConnectionString()))
+            {
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@DebeCambiar", debeCambiar);
+                    cmd.Parameters.AddWithValue("@IdUsuario", idUsuario);
+                    try
+                    {
+                        con.Open();
+                        cmd.ExecuteNonQuery();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error en MarcarUsuarioParaCambioContrasenaEnDB: " + ex.Message);
+                    }
+                }
+            }
+        }
+
+
+
         // Nuevo método para validar contra AD
         public bool ValidarConActiveDirectory(string idUsuario, string contrasena)
         {
@@ -201,6 +314,45 @@ namespace Gestor_Desempeno
                     // ValidateCredentials intentará autenticar al usuario contra el dominio
                     isValid = pc.ValidateCredentials(idUsuario, contrasena);
                 }
+
+                // Necesitarás obtener el UserPrincipal para verificar el estado de la contraseña en AD
+                using (PrincipalContext pc = new PrincipalContext(ContextType.Domain, domainName))
+                {
+                    if (pc.ValidateCredentials(idUsuario, contrasena))
+                    {
+                        // Autenticación exitosa, ahora obtener el UserPrincipal
+                        UserPrincipal userPrincipal = UserPrincipal.FindByIdentity(pc, IdentityType.SamAccountName, idUsuario);
+                        if (userPrincipal != null)
+                        {
+                            // Verificar si la contraseña ha expirado o si se requiere cambio
+                            bool adRequiereCambio = false;
+                            if (userPrincipal.LastPasswordSet == null) // Común si "User must change password at next logon" está marcado
+                            {
+                                adRequiereCambio = true;
+                            }
+                            else
+                            {
+                                // También puedes verificar userPrincipal.IsAccountLockedOut(), userPrincipal.Enabled, etc.
+                                // Para verificar la expiración real, necesitarías comparar userPrincipal.LastPasswordSet
+                                // con la política de expiración de contraseñas del dominio.
+                                // Una forma más directa es intentar acceder a userPrincipal.PasswordExpired (puede que no esté disponible en todas las versiones o configuraciones)
+                                // o verificar el atributo 'msDS-UserPasswordExpired' directamente vía DirectoryEntry si es necesario.
+                                // De forma sencilla, si AD te obliga a cambiarla, a veces ValidateCredentials falla de forma específica o userPrincipal.PasswordNotRequired = false y userPrincipal.PasswordNeverExpires = false pueden dar pistas.
+                                // La detección más robusta de "expirado" puede requerir leer atributos específicos de AD.
+                                // Por ahora, si "User must change password at next logon" es tu principal caso de uso, userPrincipal.LastPasswordSet == null es un buen indicador.
+                            }
+
+                            // Si adRequiereCambio es true, actualiza tu tabla SEG_USUARIO para ese usuario
+                            // Establece DebeCambiarContrasena = 1 para redirigirlo a CambiarContrasena.aspx
+                            // Este es un ejemplo, adapta la lógica para actualizar tu BD:
+                            // if (adRequiereCambio) {
+                            //     MarcarUsuarioParaCambioContrasenaEnDB(idUsuario, true);
+                            // }
+                        }
+                    }
+                }
+
+
             }
             catch (PrincipalServerDownException ex)
             {

@@ -15,13 +15,13 @@ namespace Gestor_Desempeno
     {
 
         /// <summary>
-        /// Control form1.
+        /// Control formCambioContrasena.
         /// </summary>
         /// <remarks>
         /// Campo generado automáticamente.
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlForm form1;
+        protected global::System.Web.UI.HtmlControls.HtmlForm formCambioContrasena;
 
         /// <summary>
         /// Control litMensajeCambio.
@@ -33,6 +33,24 @@ namespace Gestor_Desempeno
         protected global::System.Web.UI.WebControls.Literal litMensajeCambio;
 
         /// <summary>
+        /// Control txtContrasenaActual.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtContrasenaActual;
+
+        /// <summary>
+        /// Control RequiredFieldValidatorContrasenaActual.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator RequiredFieldValidatorContrasenaActual;
+
+        /// <summary>
         /// Control txtNuevaClave.
         /// </summary>
         /// <remarks>
@@ -42,13 +60,13 @@ namespace Gestor_Desempeno
         protected global::System.Web.UI.WebControls.TextBox txtNuevaClave;
 
         /// <summary>
-        /// Control RequiredFieldValidator2.
+        /// Control RequiredFieldValidatorNuevaClave.
         /// </summary>
         /// <remarks>
         /// Campo generado automáticamente.
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator RequiredFieldValidator2;
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator RequiredFieldValidatorNuevaClave;
 
         /// <summary>
         /// Control txtConfirmarClave.
@@ -60,22 +78,22 @@ namespace Gestor_Desempeno
         protected global::System.Web.UI.WebControls.TextBox txtConfirmarClave;
 
         /// <summary>
-        /// Control RequiredFieldValidator3.
+        /// Control RequiredFieldValidatorConfirmarClave.
         /// </summary>
         /// <remarks>
         /// Campo generado automáticamente.
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.RequiredFieldValidator RequiredFieldValidator3;
+        protected global::System.Web.UI.WebControls.RequiredFieldValidator RequiredFieldValidatorConfirmarClave;
 
         /// <summary>
-        /// Control CompareValidator1.
+        /// Control CompareValidatorClaves.
         /// </summary>
         /// <remarks>
         /// Campo generado automáticamente.
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.CompareValidator CompareValidator1;
+        protected global::System.Web.UI.WebControls.CompareValidator CompareValidatorClaves;
 
         /// <summary>
         /// Control btnCambiarClave.
