@@ -79,7 +79,7 @@ namespace Gestor_Desempeno
                 LEFT JOIN dbo.Area_Ejecutora ae ON md.Id_Area_Ejecutora = ae.Id_Area_Ejecutora
                 LEFT JOIN dbo.Detalle_Estado de ON md.Id_Detalle_Estado = de.Id_Detalle_Estado
 				inner join dbo.Encargado_Area ea On ea.Id_Area_Ejecutora = ae.Id_Area_Ejecutora
-				where ea.Usuario = '" + usuario + "'");
+				");
 
             StringBuilder whereClause = new StringBuilder();
 
@@ -98,6 +98,11 @@ namespace Gestor_Desempeno
             {
                 whereClause.Append(" AND md.Id_Area_Ejecutora = @IdAreaEjecutoraFiltro");
                 parameters.Add("@IdAreaEjecutoraFiltro", idAreaEjecutoraFiltro.Value);
+            }
+            if (usuario != "") // Added Area filter condition
+            {
+                whereClause.Append(" AND ea.Usuario = @usuario");
+                parameters.Add("@usuario", usuario);
             }
             // Optional: Filter by active state?
             // whereClause.Append(" AND de.Descripcion = 'Activo'"); // Or by ID if known
