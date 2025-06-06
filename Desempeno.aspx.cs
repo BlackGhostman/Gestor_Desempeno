@@ -106,6 +106,13 @@ namespace Gestor_Desempeno
                     .Where(m => m.IdDetalleEstado == ID_ESTADO_ACTIVO_META_INDIVIDUAL)
                     .ToList();
 
+                // 3. Obtener los IDs de las metas activas para buscar sus comentarios
+                List<int> idsMetasActivas = metasActivasParaProcesar.Select(m => m.IdMetaIndividual).ToList();
+
+                // 4. Obtener un diccionario con el último comentario para cada meta
+                Dictionary<int, string> ultimosComentarios = metaIndDAL.ObtenerUltimosComentariosDevueltos(idsMetasActivas);
+
+
                 // Inicializar listas para los ViewModels de cada sección/repeater
                 var metasParaVencidas = new List<MetaIndividualInfoViewModel>();
                 var metasParaSemana1 = new List<MetaIndividualInfoViewModel>();
@@ -122,6 +129,12 @@ namespace Gestor_Desempeno
                 {
                     // Tu 'MetaIndividualInfoViewModel' ya está definido en MetaIndividualDAL.cs
                     var viewModel = new MetaIndividualInfoViewModel(meta);
+
+                    // 5. Asignar el comentario del jefe al ViewModel si existe
+                    if (ultimosComentarios.ContainsKey(meta.IdMetaIndividual))
+                    {
+                        viewModel.UltimoComentarioJefe = ultimosComentarios[meta.IdMetaIndividual];
+                    }
 
                     if (meta.EsFinalizable == true)
                     {
@@ -315,11 +328,14 @@ namespace Gestor_Desempeno
                 MetaIndividualInfo metaInfo = localMetaIndDAL.ObtenerMetaIndividualPorId(metaId);
                 string descripcionMeta = metaInfo?.Descripcion ?? "Descripción de meta no encontrada.";
 
-                // Obtener el historial. El método modificado en el DAL usará codigoSemanaDeLaPestana para filtrar
-                // si es un código de semana específico, o mostrará todo si es "0000000" (para vencidas).
-                List<RespuestaInfo> historial = localRespuestaDAL.ObtenerHistorialRespuestas(metaId, codigoSemanaDeLaPestana);
+                // 1. Obtener historial de respuestas del usuario
+                List<RespuestaInfo> historialRespuestas = localRespuestaDAL.ObtenerHistorialRespuestas(metaId, codigoSemanaDeLaPestana);
 
-                if (historial != null) // Ya no es necesario && historial.Any() aquí, el procesamiento de documentos lo maneja
+                // 2. Obtener historial de revisiones del jefe
+                List<LogRevisionMetaInfo> historialRevisiones = localMetaIndDAL.ObtenerHistorialRevisiones(metaId);
+
+                // 3. Procesar documentos adjuntos para las respuestas del usuario (lógica original)
+                if (historialRespuestas != null)
                 {
                     string wsUsuario = ConfigurationManager.AppSettings["Usuario"];
                     string wsClave = ConfigurationManager.AppSettings["Clave"];
@@ -327,7 +343,7 @@ namespace Gestor_Desempeno
                     string wsGaveta = ConfigurationManager.AppSettings["Gaveta"];
                     string wsLlave = ConfigurationManager.AppSettings["Llave"];
 
-                    foreach (RespuestaInfo respuestaItem in historial)
+                    foreach (RespuestaInfo respuestaItem in historialRespuestas)
                     {
                         if (respuestaItem.IdRespuesta > 0)
                         {
@@ -337,7 +353,7 @@ namespace Gestor_Desempeno
 
                             DataSet dsCarpetaInfo = null;
                             try { dsCarpetaInfo = servicioVs2020.Devuelve_Ids_Gaveta_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, nombreCarpetaWs); }
-                            catch (Exception exServicio) { Console.WriteLine($"GetRespuestaDetalles (Docs Historial Desempeño): Excepción Devuelve_Ids_Gaveta_Carpeta para '{nombreCarpetaWs}': {exServicio.Message}"); }
+                            catch (Exception exServicio) { Console.WriteLine($"GetRespuestaDetalles (Docs Historial): Excepción Devuelve_Ids_Gaveta_Carpeta para '{nombreCarpetaWs}': {exServicio.Message}"); }
 
                             if (dsCarpetaInfo != null && dsCarpetaInfo.Tables.Count > 0 && dsCarpetaInfo.Tables[0].Rows.Count > 0)
                             {
@@ -350,14 +366,14 @@ namespace Gestor_Desempeno
                             if (string.IsNullOrEmpty(idCarpetaRespuestaWs))
                             {
                                 try { idCarpetaRespuestaWs = servicioVs2020.Insertar_Carpeta(wsUsuario, wsClave, wsArchivador, wsGaveta, wsLlave, nombreCarpetaWs); }
-                                catch (Exception exCrear) { Console.WriteLine($"GetRespuestaDetalles (Docs Historial Desempeño): Excepción Insertar_Carpeta '{nombreCarpetaWs}': {exCrear.Message}"); }
+                                catch (Exception exCrear) { Console.WriteLine($"GetRespuestaDetalles (Docs Historial): Excepción Insertar_Carpeta '{nombreCarpetaWs}': {exCrear.Message}"); }
                             }
 
                             if (!string.IsNullOrEmpty(idCarpetaRespuestaWs))
                             {
                                 DataSet dsDocumentos = null;
                                 try { dsDocumentos = servicioVs2020.Lista_De_Documentos(idCarpetaRespuestaWs); }
-                                catch (Exception exListar) { Console.WriteLine($"GetRespuestaDetalles (Docs Historial Desempeño): Excepción Lista_De_Documentos carpetaID '{idCarpetaRespuestaWs}': {exListar.Message}"); }
+                                catch (Exception exListar) { Console.WriteLine($"GetRespuestaDetalles (Docs Historial): Excepción Lista_De_Documentos carpetaID '{idCarpetaRespuestaWs}': {exListar.Message}"); }
 
                                 if (dsDocumentos != null && dsDocumentos.Tables.Count > 0 && dsDocumentos.Tables[0].Rows.Count > 0)
                                 {
@@ -377,7 +393,18 @@ namespace Gestor_Desempeno
                         }
                     }
                 }
-                return new { success = true, data = new { DescripcionMeta = descripcionMeta, HistorialConDocumentos = historial } };
+
+                // 4. Devolver ambos historiales en el objeto de datos
+                return new
+                {
+                    success = true,
+                    data = new
+                    {
+                        DescripcionMeta = descripcionMeta,
+                        HistorialRespuestas = historialRespuestas,
+                        HistorialRevisiones = historialRevisiones
+                    }
+                };
             }
             catch (Exception ex)
             {

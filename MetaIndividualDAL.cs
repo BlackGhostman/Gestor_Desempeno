@@ -35,6 +35,7 @@ namespace Gestor_Desempeno
         public int? IdTipoObjetivo { get; set; } // Para filtro
         public int? NumObjetivoPadre { get; set; } // Num_Objetivo from Objetivo table
         public string NombreObjetivoPadre { get; set; } // Nombre from Objetivo table
+        
 
         // Property for combined display text (Lista 2)
         public string DisplayTextLista2
@@ -50,12 +51,22 @@ namespace Gestor_Desempeno
         }
     }
 
+    public class LogRevisionMetaInfo
+    {
+        public DateTime FechaRevision { get; set; }
+        public string ComentarioJefe { get; set; }
+        public string TipoAccion { get; set; }
+        public string EstadoMetaAntes { get; set; }
+        public string EstadoMetaDespues { get; set; }
+    }
+
     public class MetaIndividualInfoViewModel
     {
         public MetaIndividualInfo Meta { get; set; }
         public string EstadoColorCss { get; set; }
         public string MensajeTiempo { get; set; }
         public string BadgeStyle { get; set; } // Para el estilo del badge (ej. color de fondo)
+        public string UltimoComentarioJefe { get; set; }
 
         public MetaIndividualInfoViewModel(MetaIndividualInfo meta)
         {
@@ -65,6 +76,7 @@ namespace Gestor_Desempeno
             this.EstadoColorCss = "meta-semanal-original"; // Estilo por defecto para metas semanales no finalizables
             this.MensajeTiempo = "";
             this.BadgeStyle = "background-color: #0EA5E9; color: white;"; // Azul por defecto para metas semanales
+            this.UltimoComentarioJefe = null; // Inicializar como null
         }
     }
 
@@ -74,6 +86,59 @@ namespace Gestor_Desempeno
         private string GetConnectionString()
         {
             return ConfigurationManager.ConnectionStrings["ObjetivosConnection"].ConnectionString;
+        }
+
+        public List<LogRevisionMetaInfo> ObtenerHistorialRevisiones(int idMetaIndividual)
+        {
+            var historial = new List<LogRevisionMetaInfo>();
+            string query = @"
+        SELECT 
+            l.FechaRevision,
+            l.ComentarioJefe,
+            l.TipoAccion,
+            de_antes.Descripcion AS EstadoMetaAntes,
+            de_despues.Descripcion AS EstadoMetaDespues
+        FROM 
+            dbo.Log_Revision_Meta l
+        LEFT JOIN 
+            dbo.Detalle_Estado de_antes ON l.EstadoMetaAntesRevision = de_antes.Id_Detalle_Estado
+        LEFT JOIN 
+            dbo.Detalle_Estado de_despues ON l.EstadoMetaDespuesRevision = de_despues.Id_Detalle_Estado
+        WHERE 
+            l.IdMetaIndividual = @IdMetaIndividual
+        ORDER BY 
+            l.FechaRevision DESC";
+
+            using (SqlConnection con = new SqlConnection(GetConnectionString()))
+            {
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@IdMetaIndividual", idMetaIndividual);
+                    try
+                    {
+                        con.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                historial.Add(new LogRevisionMetaInfo
+                                {
+                                    FechaRevision = Convert.ToDateTime(reader["FechaRevision"]),
+                                    ComentarioJefe = reader["ComentarioJefe"]?.ToString(),
+                                    TipoAccion = reader["TipoAccion"]?.ToString(),
+                                    EstadoMetaAntes = reader["EstadoMetaAntes"]?.ToString(),
+                                    EstadoMetaDespues = reader["EstadoMetaDespues"]?.ToString()
+                                });
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en ObtenerHistorialRevisiones: {ex.Message}");
+                    }
+                }
+            }
+            return historial;
         }
 
         // Dentro de tu clase MetaIndividualDAL en MetaIndividualDAL.cs
@@ -168,6 +233,68 @@ namespace Gestor_Desempeno
                 }
             }
             return lista;
+        }
+
+        // ===== AÑADIR ESTE MÉTODO COMPLETO DENTRO DE LA CLASE MetaIndividualDAL =====
+        public Dictionary<int, string> ObtenerUltimosComentariosDevueltos(List<int> idsMetas)
+        {
+            var comentarios = new Dictionary<int, string>();
+            if (idsMetas == null || !idsMetas.Any())
+            {
+                return comentarios;
+            }
+
+            // Crea una lista de parámetros para la cláusula IN, previniendo inyección SQL
+            var idParameters = idsMetas.Select((id, index) => new SqlParameter($"@Id{index}", id)).ToList();
+            var idParamNames = string.Join(", ", idParameters.Select(p => p.ParameterName));
+
+            // Esta consulta usa ROW_NUMBER para encontrar el último comentario de cada meta de forma eficiente
+            string query = $@"
+        WITH RankedComments AS (
+            SELECT
+                IdMetaIndividual,
+                ComentarioJefe,
+                ROW_NUMBER() OVER(PARTITION BY IdMetaIndividual ORDER BY FechaRevision DESC) as rn
+            FROM 
+                dbo.Log_Revision_Meta
+            WHERE 
+                IdMetaIndividual IN ({idParamNames})
+                AND TipoAccion = 'Devuelta' 
+                AND ComentarioJefe IS NOT NULL 
+                AND ComentarioJefe <> ''
+        )
+        SELECT
+            IdMetaIndividual,
+            ComentarioJefe
+        FROM 
+            RankedComments
+        WHERE 
+            rn = 1;";
+
+            using (SqlConnection con = new SqlConnection(GetConnectionString()))
+            {
+                using (SqlCommand cmd = new SqlCommand(query, con))
+                {
+                    cmd.Parameters.AddRange(idParameters.ToArray());
+                    try
+                    {
+                        con.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                comentarios[Convert.ToInt32(reader["IdMetaIndividual"])] = reader["ComentarioJefe"].ToString();
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en ObtenerUltimosComentariosDevueltos: {ex.Message}");
+                        // Puedes considerar lanzar la excepción si prefieres manejarla más arriba
+                    }
+                }
+            }
+            return comentarios;
         }
 
         public bool ActualizarEstadoMetaIndividual(int idMetaIndividual, int nuevoIdDetalleEstado)

@@ -369,7 +369,7 @@ namespace Gestor_Desempeno
                 }
                 else
                 { // Agregar
-                    int nuevoId = metaIndDAL.InsertarMetaIndividual(idMetaDep, usuario, desc, alcance, pesoN4, pesoN5, fechaIni, fechaFin, esFinalizable, idEstado);
+                    int nuevoId = metaIndDAL.InsertarMetaIndividual(idMetaDep, usuario, desc, alcance, pesoN4, pesoN5, fechaIni, fechaFin, false, idEstado);
                     success = (nuevoId > 0);
                     actionMessage = success ? "Meta Individual agregada." : "Error al agregar.";
                 }

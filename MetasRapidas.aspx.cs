@@ -100,7 +100,7 @@ namespace Gestor_Desempeno
                 string descripcion = txtDescripcion.Text.Trim();
                 DateTime fechaInicial = DateTime.Parse(txtFechaInicial.Text);
                 DateTime fechaFinal = DateTime.Parse(txtFechaFinal.Text);
-                bool esFinalizable = chkEsFinalizable.Checked;
+                bool esFinalizable = true;
 
                 if (string.IsNullOrEmpty(usuarioSeleccionado))
                 {

@@ -22,6 +22,55 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* Sombra suave para profundidad */
         }
 
+        .historial-item {
+    padding: 8px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    max-width: 90%;
+    border: 1px solid #e5e7eb;
+}
+.historial-item .fecha {
+    font-size: 0.75em;
+    font-weight: bold;
+    color: #6c757d;
+    display: block;
+    margin-bottom: 4px;
+}
+.historial-item .descripcion {
+    font-size: 0.9em;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+.respuesta-usuario {
+    background-color: #e0f2fe; /* Azul claro */
+    margin-left: auto;
+}
+.revision-jefe {
+    background-color: #f3f4f6; /* Gris claro */
+    margin-right: auto;
+}
+.revision-jefe .descripcion {
+    font-style: italic;
+}
+
+        .comentario-jefe {
+        font-size: 0.8rem;
+        font-style: italic;
+        color: #6c757d; /* Un color gris sutil */
+        margin-top: 0.25rem;
+        width: 100%;
+        display: block; /* Asegura que ocupe su propia línea */
+        padding-left: 2rem; /* Alinea con el texto de la descripción */
+        text-indent: -1.2rem; /* Sangría negativa para el ícono */
+        overflow-wrap: break-word; /* Para que el texto largo no rompa el layout */
+    }
+
+    .comentario-jefe::before {
+        content: '↪'; /* O puedes usar un ícono con font-awesome o una imagen */
+        margin-right: 0.5rem;
+        font-weight: bold;
+    }
+
             .meta-item-base:hover {
                 /* box-shadow: 0 2px 5px rgba(0,0,0,0.1); */ /* Sombra más pronunciada al hacer hover */
             }
@@ -127,6 +176,12 @@
                 padding-bottom: 2.8rem; /* Espacio adicional en la parte inferior para el texto de tiempo */
             }
 
+            .comentario-jefe {
+            padding-left: 0; /* Sin padding en móvil */
+            text-indent: 0;
+            text-align: left; /* Alineación izquierda en móvil */
+        }
+
             .meta-type-badge {
                 align-self: center; /* Centra el badge (PEM/MOD) horizontalmente */
                 margin-right: 0 !important; /* Elimina el margen derecho que tenía en desktop */
@@ -172,7 +227,7 @@
         /* Paneles que contienen botones (cuando son visibles) */
         .modal-footer #<%= pnlBotonesMetaFinalizable.ClientID %>,
         .modal-footer #<%= pnlBotonMetaSemanal.ClientID %> {
-            display: flex !important; /* Asegura que sea flex para aplicar gap y direction */
+            display: flex ; /* Asegura que sea flex para aplicar gap y direction */
             flex-direction: column;
             width: 100%;
             gap: 0.75rem; /* Espacio entre botones dentro del mismo panel */
@@ -256,33 +311,25 @@
         <ContentTemplate>
             <asp:HiddenField ID="hfSelectedMetaId" runat="server" Value="0" />
             <asp:HiddenField ID="hfSelectedIsFinalizable" runat="server" Value="false" />
-            <%-- hfActiveWeekNumber almacenará "overdue", "1", "2", "3", "4", o "5" --%>
             <asp:HiddenField ID="hfActiveWeekNumber" runat="server" Value="1" />
             <input id="hdGuardado" type="hidden" runat="server" value="false" />
 
             <div class="card shadow-lg mx-auto" style="max-width: 60rem;">
                 <div class="card-body p-4 p-md-5">
                     <h1 class="card-title h2 mb-4 border-bottom pb-3">Gestión de Desempeño</h1>
-
                     <asp:Literal ID="litFeedback" runat="server" EnableViewState="false"></asp:Literal>
-                    <div id="feedbackMessageJS" class="feedback-message alert" role="alert"></div>
-
-                    <%-- SECCIÓN DE METAS VENCIDAS (SIEMPRE VISIBLE) --%>
+                    
                     <section id="metasVencidasSection" class="section-metas">
                         <h2 class="h4 mb-3 text-danger">Reportes Vencidos</h2>
                         <asp:Repeater ID="rptMetasVencidas" runat="server" ItemType="Gestor_Desempeno.MetaIndividualInfoViewModel">
-                            <HeaderTemplate>
-                                <div class="list-group">
-                            </HeaderTemplate>
-                            <%-- No mt-3 aquí, el padding de section-metas lo maneja --%>
+                            <HeaderTemplate><div class="list-group"></HeaderTemplate>
                             <ItemTemplate>
-                                <div class='list-group-item meta-item-base <%# Item.EstadoColorCss %>'
-                                    data-meta-id='<%# Item.Meta.IdMetaIndividual %>'
-                                    data-description='<%# Server.HtmlEncode(Item.Meta.Descripcion) %>'
-                                    data-es-finalizable='<%# Item.Meta.EsFinalizable.ToString().ToLower() %>'
-                                    data-meta-type='<%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %>'>
+                                <div class='list-group-item meta-item-base <%# Item.EstadoColorCss %>' data-meta-id='<%# Item.Meta.IdMetaIndividual %>' data-description='<%# Server.HtmlEncode(Item.Meta.Descripcion) %>' data-es-finalizable='<%# Item.Meta.EsFinalizable.ToString().ToLower() %>' data-meta-type='<%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %>'>
                                     <span class="badge meta-type-badge" style='<%# Item.BadgeStyle %>'><%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %></span>
                                     <span class="task-description-bs flex-grow-1"><%# Server.HtmlEncode(Item.Meta.Descripcion) %></span>
+                                    <div runat="server" class="comentario-jefe" title="Último comentario del jefe" Visible='<%# !string.IsNullOrEmpty(Item.UltimoComentarioJefe) %>'>
+                                        <%# Server.HtmlEncode(Item.UltimoComentarioJefe) %>
+                                    </div>
                                     <small class="ms-2 text-muted"><%# Server.HtmlEncode(Item.MensajeTiempo) %></small>
                                 </div>
                             </ItemTemplate>
@@ -293,12 +340,10 @@
                         </asp:Panel>
                     </section>
 
-                    <%-- SECCIÓN DE PLAN SEMANAL (PESTAÑAS) --%>
                     <section id="planSemanalSection" class="mb-4">
                         <h2 class="h4 mb-3 text-primary">Reporte Semanal</h2>
                         <nav>
                             <div class="nav nav-tabs mb-0" id="nav-tab" role="tablist">
-                                <%-- El botón de Vencidas se ha movido --%>
                                 <button class="nav-link" id="nav-week-1-tab" data-bs-toggle="tab" data-bs-target="#nav-week-1" type="button" role="tab" aria-controls="nav-week-1" aria-selected="false" data-week-code-num="1">Semana 1</button>
                                 <button class="nav-link" id="nav-week-2-tab" data-bs-toggle="tab" data-bs-target="#nav-week-2" type="button" role="tab" aria-controls="nav-week-2" aria-selected="false" data-week-code-num="2">Semana 2</button>
                                 <button class="nav-link" id="nav-week-3-tab" data-bs-toggle="tab" data-bs-target="#nav-week-3" type="button" role="tab" aria-controls="nav-week-3" aria-selected="false" data-week-code-num="3">Semana 3</button>
@@ -307,134 +352,27 @@
                             </div>
                         </nav>
                         <div class="tab-content" id="nav-tabContent">
-                            <%-- El panel de Vencidas se ha movido --%>
-
-                            <%-- Pestañas para Semanas 1 a 5 --%>
-                            <%-- Semana 1 --%>
                             <div class="tab-pane fade" id="nav-week-1" role="tabpanel" aria-labelledby="nav-week-1-tab" tabindex="0">
                                 <asp:Repeater ID="rptSemana1" runat="server" ItemType="Gestor_Desempeno.MetaIndividualInfoViewModel">
-                                    <HeaderTemplate>
-                                        <div class="list-group mt-3">
-                                    </HeaderTemplate>
+                                    <HeaderTemplate><div class="list-group mt-3"></HeaderTemplate>
                                     <ItemTemplate>
-                                        <div class='list-group-item meta-item-base <%# Item.EstadoColorCss %>'
-                                            data-meta-id='<%# Item.Meta.IdMetaIndividual %>'
-                                            data-description='<%# Server.HtmlEncode(Item.Meta.Descripcion) %>'
-                                            data-es-finalizable='<%# Item.Meta.EsFinalizable.ToString().ToLower() %>'
-                                            data-meta-type='<%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %>'>
+                                        <div class='list-group-item meta-item-base <%# Item.EstadoColorCss %>' data-meta-id='<%# Item.Meta.IdMetaIndividual %>' data-description='<%# Server.HtmlEncode(Item.Meta.Descripcion) %>' data-es-finalizable='<%# Item.Meta.EsFinalizable.ToString().ToLower() %>' data-meta-type='<%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %>'>
                                             <span class="badge meta-type-badge" style='<%# Item.BadgeStyle %>'><%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %></span>
-                                            <span class="task-description-bs flex-grow-1">
-                                                <%# Item.Meta.EsFinalizable == true ? Server.HtmlEncode(Item.Meta.Descripcion) : Server.HtmlEncode(Item.Meta.DisplayTextLista2) %>
-                                            </span>
+                                            <span class="task-description-bs flex-grow-1"><%# Item.Meta.EsFinalizable == true ? Server.HtmlEncode(Item.Meta.Descripcion) : Server.HtmlEncode(Item.Meta.DisplayTextLista2) %></span>
+                                            <div runat="server" class="comentario-jefe" title="Último comentario del jefe" Visible='<%# !string.IsNullOrEmpty(Item.UltimoComentarioJefe) %>'>
+                                                <%# Server.HtmlEncode(Item.UltimoComentarioJefe) %>
+                                            </div>
                                             <small class="ms-2 text-muted"><%# Server.HtmlEncode(Item.MensajeTiempo) %></small>
                                         </div>
                                     </ItemTemplate>
                                     <FooterTemplate></div></FooterTemplate>
                                 </asp:Repeater>
-                                <asp:Panel ID="pnlEmptySemana1" runat="server" Visible="false" CssClass="empty-data-panel">
-                                    <div class="alert alert-light small mt-3">No hay metas asignadas para esta semana.</div>
-                                </asp:Panel>
+                                <asp:Panel ID="pnlEmptySemana1" runat="server" Visible="false" CssClass="empty-data-panel"><div class="alert alert-light small mt-3">No hay metas asignadas para esta semana.</div></asp:Panel>
                             </div>
-                            <%-- Semana 2 --%>
-                            <div class="tab-pane fade" id="nav-week-2" role="tabpanel" aria-labelledby="nav-week-2-tab" tabindex="0">
-                                <asp:Repeater ID="rptSemana2" runat="server" ItemType="Gestor_Desempeno.MetaIndividualInfoViewModel">
-                                    <HeaderTemplate>
-                                        <div class="list-group mt-3">
-                                    </HeaderTemplate>
-                                    <ItemTemplate>
-                                        <div class='list-group-item meta-item-base <%# Item.EstadoColorCss %>'
-                                            data-meta-id='<%# Item.Meta.IdMetaIndividual %>'
-                                            data-description='<%# Server.HtmlEncode(Item.Meta.Descripcion) %>'
-                                            data-es-finalizable='<%# Item.Meta.EsFinalizable.ToString().ToLower() %>'
-                                            data-meta-type='<%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %>'>
-                                            <span class="badge meta-type-badge" style='<%# Item.BadgeStyle %>'><%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %></span>
-                                            <span class="task-description-bs flex-grow-1">
-                                                <%# Item.Meta.EsFinalizable == true ? Server.HtmlEncode(Item.Meta.Descripcion) : Server.HtmlEncode(Item.Meta.DisplayTextLista2) %>
-                                            </span>
-                                            <small class="ms-2 text-muted"><%# Server.HtmlEncode(Item.MensajeTiempo) %></small>
-                                        </div>
-                                    </ItemTemplate>
-                                    <FooterTemplate></div></FooterTemplate>
-                                </asp:Repeater>
-                                <asp:Panel ID="pnlEmptySemana2" runat="server" Visible="false" CssClass="empty-data-panel">
-                                    <div class="alert alert-light small mt-3">No hay metas asignadas para esta semana.</div>
-                                </asp:Panel>
-                            </div>
-                            <%-- Semana 3 --%>
-                            <div class="tab-pane fade" id="nav-week-3" role="tabpanel" aria-labelledby="nav-week-3-tab" tabindex="0">
-                                <asp:Repeater ID="rptSemana3" runat="server" ItemType="Gestor_Desempeno.MetaIndividualInfoViewModel">
-                                    <HeaderTemplate>
-                                        <div class="list-group mt-3">
-                                    </HeaderTemplate>
-                                    <ItemTemplate>
-                                        <div class='list-group-item meta-item-base <%# Item.EstadoColorCss %>'
-                                            data-meta-id='<%# Item.Meta.IdMetaIndividual %>'
-                                            data-description='<%# Server.HtmlEncode(Item.Meta.Descripcion) %>'
-                                            data-es-finalizable='<%# Item.Meta.EsFinalizable.ToString().ToLower() %>'
-                                            data-meta-type='<%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %>'>
-                                            <span class="badge meta-type-badge" style='<%# Item.BadgeStyle %>'><%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %></span>
-                                            <span class="task-description-bs flex-grow-1">
-                                                <%# Item.Meta.EsFinalizable == true ? Server.HtmlEncode(Item.Meta.Descripcion) : Server.HtmlEncode(Item.Meta.DisplayTextLista2) %>
-                                            </span>
-                                            <small class="ms-2 text-muted"><%# Server.HtmlEncode(Item.MensajeTiempo) %></small>
-                                        </div>
-                                    </ItemTemplate>
-                                    <FooterTemplate></div></FooterTemplate>
-                                </asp:Repeater>
-                                <asp:Panel ID="pnlEmptySemana3" runat="server" Visible="false" CssClass="empty-data-panel">
-                                    <div class="alert alert-light small mt-3">No hay metas asignadas para esta semana.</div>
-                                </asp:Panel>
-                            </div>
-                            <%-- Semana 4 --%>
-                            <div class="tab-pane fade" id="nav-week-4" role="tabpanel" aria-labelledby="nav-week-4-tab" tabindex="0">
-                                <asp:Repeater ID="rptSemana4" runat="server" ItemType="Gestor_Desempeno.MetaIndividualInfoViewModel">
-                                    <HeaderTemplate>
-                                        <div class="list-group mt-3">
-                                    </HeaderTemplate>
-                                    <ItemTemplate>
-                                        <div class='list-group-item meta-item-base <%# Item.EstadoColorCss %>'
-                                            data-meta-id='<%# Item.Meta.IdMetaIndividual %>'
-                                            data-description='<%# Server.HtmlEncode(Item.Meta.Descripcion) %>'
-                                            data-es-finalizable='<%# Item.Meta.EsFinalizable.ToString().ToLower() %>'
-                                            data-meta-type='<%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %>'>
-                                            <span class="badge meta-type-badge" style='<%# Item.BadgeStyle %>'><%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %></span>
-                                            <span class="task-description-bs flex-grow-1">
-                                                <%# Item.Meta.EsFinalizable == true ? Server.HtmlEncode(Item.Meta.Descripcion) : Server.HtmlEncode(Item.Meta.DisplayTextLista2) %>
-                                            </span>
-                                            <small class="ms-2 text-muted"><%# Server.HtmlEncode(Item.MensajeTiempo) %></small>
-                                        </div>
-                                    </ItemTemplate>
-                                    <FooterTemplate></div></FooterTemplate>
-                                </asp:Repeater>
-                                <asp:Panel ID="pnlEmptySemana4" runat="server" Visible="false" CssClass="empty-data-panel">
-                                    <div class="alert alert-light small mt-3">No hay metas asignadas para esta semana.</div>
-                                </asp:Panel>
-                            </div>
-                            <%-- Semana 5 --%>
-                            <div class="tab-pane fade" id="nav-week-5" role="tabpanel" aria-labelledby="nav-week-5-tab" tabindex="0">
-                                <asp:Repeater ID="rptSemana5" runat="server" ItemType="Gestor_Desempeno.MetaIndividualInfoViewModel">
-                                    <HeaderTemplate>
-                                        <div class="list-group mt-3">
-                                    </HeaderTemplate>
-                                    <ItemTemplate>
-                                        <div class='list-group-item meta-item-base <%# Item.EstadoColorCss %>'
-                                            data-meta-id='<%# Item.Meta.IdMetaIndividual %>'
-                                            data-description='<%# Server.HtmlEncode(Item.Meta.Descripcion) %>'
-                                            data-es-finalizable='<%# Item.Meta.EsFinalizable.ToString().ToLower() %>'
-                                            data-meta-type='<%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %>'>
-                                            <span class="badge meta-type-badge" style='<%# Item.BadgeStyle %>'><%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %></span>
-                                            <span class="task-description-bs flex-grow-1">
-                                                <%# Item.Meta.EsFinalizable == true ? Server.HtmlEncode(Item.Meta.Descripcion) : Server.HtmlEncode(Item.Meta.DisplayTextLista2) %>
-                                            </span>
-                                            <small class="ms-2 text-muted"><%# Server.HtmlEncode(Item.MensajeTiempo) %></small>
-                                        </div>
-                                    </ItemTemplate>
-                                    <FooterTemplate></div></FooterTemplate>
-                                </asp:Repeater>
-                                <asp:Panel ID="pnlEmptySemana5" runat="server" Visible="false" CssClass="empty-data-panel">
-                                    <div class="alert alert-light small mt-3">No hay metas asignadas para esta semana.</div>
-                                </asp:Panel>
-                            </div>
+                            <div class="tab-pane fade" id="nav-week-2" role="tabpanel" aria-labelledby="nav-week-2-tab" tabindex="0"><asp:Repeater ID="rptSemana2" runat="server" ItemType="Gestor_Desempeno.MetaIndividualInfoViewModel"><HeaderTemplate><div class="list-group mt-3"></HeaderTemplate><ItemTemplate><div class='list-group-item meta-item-base <%# Item.EstadoColorCss %>' data-meta-id='<%# Item.Meta.IdMetaIndividual %>' data-description='<%# Server.HtmlEncode(Item.Meta.Descripcion) %>' data-es-finalizable='<%# Item.Meta.EsFinalizable.ToString().ToLower() %>' data-meta-type='<%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %>'><span class="badge meta-type-badge" style='<%# Item.BadgeStyle %>'><%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %></span><span class="task-description-bs flex-grow-1"><%# Item.Meta.EsFinalizable == true ? Server.HtmlEncode(Item.Meta.Descripcion) : Server.HtmlEncode(Item.Meta.DisplayTextLista2) %></span><div runat="server" class="comentario-jefe" title="Último comentario del jefe" Visible='<%# !string.IsNullOrEmpty(Item.UltimoComentarioJefe) %>'><%# Server.HtmlEncode(Item.UltimoComentarioJefe) %></div><small class="ms-2 text-muted"><%# Server.HtmlEncode(Item.MensajeTiempo) %></small></div></ItemTemplate><FooterTemplate></div></FooterTemplate></asp:Repeater><asp:Panel ID="pnlEmptySemana2" runat="server" Visible="false" CssClass="empty-data-panel"><div class="alert alert-light small mt-3">No hay metas asignadas para esta semana.</div></asp:Panel></div>
+                            <div class="tab-pane fade" id="nav-week-3" role="tabpanel" aria-labelledby="nav-week-3-tab" tabindex="0"><asp:Repeater ID="rptSemana3" runat="server" ItemType="Gestor_Desempeno.MetaIndividualInfoViewModel"><HeaderTemplate><div class="list-group mt-3"></HeaderTemplate><ItemTemplate><div class='list-group-item meta-item-base <%# Item.EstadoColorCss %>' data-meta-id='<%# Item.Meta.IdMetaIndividual %>' data-description='<%# Server.HtmlEncode(Item.Meta.Descripcion) %>' data-es-finalizable='<%# Item.Meta.EsFinalizable.ToString().ToLower() %>' data-meta-type='<%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %>'><span class="badge meta-type-badge" style='<%# Item.BadgeStyle %>'><%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %></span><span class="task-description-bs flex-grow-1"><%# Item.Meta.EsFinalizable == true ? Server.HtmlEncode(Item.Meta.Descripcion) : Server.HtmlEncode(Item.Meta.DisplayTextLista2) %></span><div runat="server" class="comentario-jefe" title="Último comentario del jefe" Visible='<%# !string.IsNullOrEmpty(Item.UltimoComentarioJefe) %>'><%# Server.HtmlEncode(Item.UltimoComentarioJefe) %></div><small class="ms-2 text-muted"><%# Server.HtmlEncode(Item.MensajeTiempo) %></small></div></ItemTemplate><FooterTemplate></div></FooterTemplate></asp:Repeater><asp:Panel ID="pnlEmptySemana3" runat="server" Visible="false" CssClass="empty-data-panel"><div class="alert alert-light small mt-3">No hay metas asignadas para esta semana.</div></asp:Panel></div>
+                            <div class="tab-pane fade" id="nav-week-4" role="tabpanel" aria-labelledby="nav-week-4-tab" tabindex="0"><asp:Repeater ID="rptSemana4" runat="server" ItemType="Gestor_Desempeno.MetaIndividualInfoViewModel"><HeaderTemplate><div class="list-group mt-3"></HeaderTemplate><ItemTemplate><div class='list-group-item meta-item-base <%# Item.EstadoColorCss %>' data-meta-id='<%# Item.Meta.IdMetaIndividual %>' data-description='<%# Server.HtmlEncode(Item.Meta.Descripcion) %>' data-es-finalizable='<%# Item.Meta.EsFinalizable.ToString().ToLower() %>' data-meta-type='<%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %>'><span class="badge meta-type-badge" style='<%# Item.BadgeStyle %>'><%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %></span><span class="task-description-bs flex-grow-1"><%# Item.Meta.EsFinalizable == true ? Server.HtmlEncode(Item.Meta.Descripcion) : Server.HtmlEncode(Item.Meta.DisplayTextLista2) %></span><div runat="server" class="comentario-jefe" title="Último comentario del jefe" Visible='<%# !string.IsNullOrEmpty(Item.UltimoComentarioJefe) %>'><%# Server.HtmlEncode(Item.UltimoComentarioJefe) %></div><small class="ms-2 text-muted"><%# Server.HtmlEncode(Item.MensajeTiempo) %></small></div></ItemTemplate><FooterTemplate></div></FooterTemplate></asp:Repeater><asp:Panel ID="pnlEmptySemana4" runat="server" Visible="false" CssClass="empty-data-panel"><div class="alert alert-light small mt-3">No hay metas asignadas para esta semana.</div></asp:Panel></div>
+                            <div class="tab-pane fade" id="nav-week-5" role="tabpanel" aria-labelledby="nav-week-5-tab" tabindex="0"><asp:Repeater ID="rptSemana5" runat="server" ItemType="Gestor_Desempeno.MetaIndividualInfoViewModel"><HeaderTemplate><div class="list-group mt-3"></HeaderTemplate><ItemTemplate><div class='list-group-item meta-item-base <%# Item.EstadoColorCss %>' data-meta-id='<%# Item.Meta.IdMetaIndividual %>' data-description='<%# Server.HtmlEncode(Item.Meta.Descripcion) %>' data-es-finalizable='<%# Item.Meta.EsFinalizable.ToString().ToLower() %>' data-meta-type='<%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %>'><span class="badge meta-type-badge" style='<%# Item.BadgeStyle %>'><%# Server.HtmlEncode(Item.Meta.NombreTipoObjetivo) %></span><span class="task-description-bs flex-grow-1"><%# Item.Meta.EsFinalizable == true ? Server.HtmlEncode(Item.Meta.Descripcion) : Server.HtmlEncode(Item.Meta.DisplayTextLista2) %></span><div runat="server" class="comentario-jefe" title="Último comentario del jefe" Visible='<%# !string.IsNullOrEmpty(Item.UltimoComentarioJefe) %>'><%# Server.HtmlEncode(Item.UltimoComentarioJefe) %></div><small class="ms-2 text-muted"><%# Server.HtmlEncode(Item.MensajeTiempo) %></small></div></ItemTemplate><FooterTemplate></div></FooterTemplate></asp:Repeater><asp:Panel ID="pnlEmptySemana5" runat="server" Visible="false" CssClass="empty-data-panel"><div class="alert alert-light small mt-3">No hay metas asignadas para esta semana.</div></asp:Panel></div>
                         </div>
                     </section>
                 </div>
@@ -453,13 +391,12 @@
                         <div class="modal-body">
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">Descripción de la Meta:</label>
-                                <div id="modalDescriptionDisplay" class="p-3 border rounded bg-light" style="min-height: 50px;">Cargando descripción...</div>
+                                <div id="modalDescriptionDisplay" class="p-3 border rounded bg-light" style="min-height: 50px;">Cargando...</div>
                             </div>
-
                             <hr />
                             <h6 class="fw-semibold">Historial de Respuestas Anteriores:</h6>
-                            <div id="modalHistorialDesempeno" class="p-2 border rounded bg-light mb-3" style="min-height: 100px; max-height: 200px; overflow-y: auto;">
-                                <span class="text-muted small">Cargando historial...</span>
+                            <div id="modalHistorialDesempeno" class="p-2 border rounded bg-light mb-3" style="max-height: 200px; overflow-y: auto;">
+                                <span class="text-muted small">Cargando...</span>
                             </div>
                             <hr />
                             <div class="mt-3">
@@ -467,42 +404,25 @@
                                 <textarea class="form-control" id="modalObservacion" rows="4" placeholder="Ingrese su nueva respuesta u observación aquí..." runat="server"></textarea>
                             </div>
                             <div class="mt-3">
-                                <label for="<%= fileUploadControl.ClientID %>" class="form-label fw-semibold">Adjuntar Archivo (Opcional para esta nueva respuesta):</label>
-
-                                <%-- Botón con icono de cámara, visible solo en móviles (xs, sm) --%>
+                                <label for="<%= fileUploadControl.ClientID %>" class="form-label fw-semibold">Adjuntar Archivo (Opcional):</label>
                                 <button type="button" id="btnMobileFileUploadTrigger" class="btn btn-outline-secondary w-100 mb-2 d-flex d-md-none align-items-center justify-content-center">
-                                    <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/camera.svg" alt="Adjuntar" style="width: 1.2em; height: 1.2em; vertical-align: text-bottom; margin-right: 0.5em;" />
+                                    <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/camera.svg" alt="Adjuntar" style="width: 1.2em; height: 1.2em; margin-right: 0.5em;"/>
                                     <span id="txtMobileFileUploadName">Adjuntar archivo</span>
                                 </button>
-
-                                <%-- FileUpload original de ASP.NET. Visible en escritorio (md, lg, xl), oculto en móviles --%>
-                                <%-- En móviles, este control será disparado por el botón de arriba --%>
                                 <div class="d-none d-md-block">
-                                    <%-- Este div se muestra en md y más grandes, se oculta en más pequeños --%>
                                     <asp:FileUpload ID="fileUploadControl" runat="server" CssClass="form-control" />
                                 </div>
-
-                                <%-- Span para mostrar el nombre del archivo seleccionado. Visible siempre, pero se puede estilizar diferente --%>
                                 <span class="form-text" id="commonFileNameDisplay">Ningún archivo seleccionado.</span>
                             </div>
-
-                            <%-- ... el resto del modal-body ... --%>
-
-                            <%-- En el <div class="modal-footer"> --%>
-                            <%-- Los paneles y botones permanecen igual en estructura, solo se aplicarán estilos CSS --%>
-                            <div class="modal-footer">
-                                <asp:Panel ID="pnlBotonesMetaFinalizable" runat="server" Style="display: none;">
-                                    <asp:Button ID="btModalGuardarAvance" runat="server" CssClass="btn btn-info me-2" Text="Guardar Avance" OnClick="btModalGuardarAvance_Click" />
-                                    <asp:Button ID="btModalFinalizarMeta" runat="server" CssClass="btn btn-success" Text="Finalizar Meta" OnClick="btModalFinalizarMeta_Click" />
-                                </asp:Panel>
-                                <asp:Panel ID="pnlBotonMetaSemanal" runat="server" Style="display: none;">
-                                    <asp:Button ID="btModalGuardarSemanal" runat="server" CssClass="btn btn-primary" Text="Guardar Respuesta" OnClick="btModalGuardarSemanal_Click" />
-                                </asp:Panel>
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <asp:Panel ID="pnlBotonesMetaFinalizable" runat="server" Style="display: none;"><asp:Button ID="btModalGuardarAvance" runat="server" CssClass="btn btn-info me-2" Text="Guardar Avance" OnClick="btModalGuardarAvance_Click" /><asp:Button ID="btModalFinalizarMeta" runat="server" CssClass="btn btn-success" Text="Finalizar Meta" OnClick="btModalFinalizarMeta_Click" /></asp:Panel>
+                            <asp:Panel ID="pnlBotonMetaSemanal" runat="server" Style="display: none;"><asp:Button ID="btModalGuardarSemanal" runat="server" CssClass="btn btn-primary" Text="Guardar Respuesta" OnClick="btModalGuardarSemanal_Click" /></asp:Panel>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         </div>
                     </div>
                 </div>
+            </div>
         </ContentTemplate>
         <Triggers>
             <asp:PostBackTrigger ControlID="btModalGuardarAvance" />
@@ -614,149 +534,111 @@
 
 
 
-        function showRespuestaModal(title, descriptionMeta, iconName = 'file-text', metaId = 0, esFinalizable = false /*, los parámetros existingObservacion y datosDocs ya no son necesarios aquí */) {
-            console.log("showRespuestaModal para Desempeño - MetaID:", metaId);
-
-            // Validaciones básicas de elementos del modal
-            if (!respuestaModalElement || !modalTitle || !modalDescriptionDisplay || !modalIcon || !modalObservacionTextarea || !hfSelectedMetaId || !hfSelectedIsFinalizable) {
-                console.error("Elementos principales del modal no encontrados.");
-                showFeedback("No se pueden mostrar los detalles. Elementos del modal no encontrados.", "danger");
-                return;
-            }
-            if (!respuestaModal) { // Si la instancia del modal no existe
-                initializeModal(); // Intenta inicializarla
-                if (!respuestaModal) { // Si sigue sin existir
-                    showFeedback('Error crítico: El diálogo modal no se pudo inicializar.', 'danger');
-                    return;
-                }
-            }
-
-            resetModalFields(); // Esta función ya debería poner la observación en blanco y limpiar archivos
-
-            // Configurar título y descripción de la meta
+        function showRespuestaModal(title, descriptionMeta, iconName = 'file-text', metaId = 0, esFinalizable = false) {
+            // 1. Resetea y configura el modal (título, descripción, botones, etc.)
+            resetModalFields();
             modalTitle.textContent = title || 'Registrar Respuesta';
             modalDescriptionDisplay.textContent = descriptionMeta || 'No hay descripción disponible.';
-            if (typeof lucideBaseUrl !== 'undefined' && modalIcon) {
-                modalIcon.src = `${lucideBaseUrl}${iconName}.svg`;
-                modalIcon.alt = `Icono ${title || 'respuesta'}`;
-            }
-
-            // Establecer IDs y estado de finalizable
+            modalIcon.src = `${lucideBaseUrl}${iconName}.svg`;
             hfSelectedMetaId.value = metaId.toString();
             hfSelectedIsFinalizable.value = esFinalizable.toString().toLowerCase();
+            pnlBotonesMetaFinalizable.style.display = esFinalizable ? 'flex' : 'none';
+            pnlBotonMetaSemanal.style.display = esFinalizable ? 'none' : 'block';
 
-            // *** El textarea de observación principal AHORA SIEMPRE EMPIEZA VACÍO ***
-            if (modalObservacionTextarea) modalObservacionTextarea.value = '';
+            // 2. Carga y combina los historiales
+            const modalHistorialContainer = document.getElementById('modalHistorialDesempeno');
+            modalHistorialContainer.innerHTML = '<div class="text-center small p-2"><div class="spinner-border spinner-border-sm" role="status"></div> Cargando historial...</div>';
 
-            // *** Eliminar la lógica que poblaba el antiguo #ParaIconos ***
-            // var contenedorDocumentosAntiguo = document.getElementById('ParaIconos');
-            // if (contenedorDocumentosAntiguo) contenedorDocumentosAntiguo.innerHTML = '<p class="mt-3 small text-muted">...</p>';
-
-
-            // Mostrar/ocultar paneles de botones según 'esFinalizable' (esta lógica la tienes y debe permanecer)
-            if (pnlBotonesMetaFinalizable && pnlBotonMetaSemanal) {
-                if (esFinalizable) {
-                    pnlBotonesMetaFinalizable.style.display = 'flex';
-                    pnlBotonMetaSemanal.style.display = 'none';
-                } else {
-                    pnlBotonesMetaFinalizable.style.display = 'none';
-                    pnlBotonMetaSemanal.style.display = 'block';
-                }
+            let codigoSemanaContexto = "0000000";
+            const activeTabButton = document.querySelector('#nav-tab .nav-link.active');
+            const clickedItem = document.querySelector(`.meta-item-base[data-meta-id="${metaId}"]`);
+            if (clickedItem && clickedItem.closest('#metasVencidasSection')) {
+                codigoSemanaContexto = "0000000";
+            } else if (activeTabButton && activeTabButton.dataset.weekCodeNum) {
+                codigoSemanaContexto = getCodigoSemanaServidorFormato(activeTabButton.dataset.weekCodeNum);
             }
 
-            // --- NUEVO: Cargar y mostrar el historial de respuestas ---
-            const modalHistorialDesempenoJS = document.getElementById('modalHistorialDesempeno');
-            if (modalHistorialDesempenoJS) {
-                modalHistorialDesempenoJS.innerHTML = '<div class="text-center small p-2"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando...</span></div> Cargando historial...</div>';
-
-                // Llamar al WebMethod modificado. 
-                // Los parámetros esFinalizable y codigoSemanaDeLaPestana (que se obtenía del tab activo)
-                // ya no son estrictamente necesarios para lo que devuelve GetRespuestaDetalles, pero PageMethods los requiere si están en la firma.
-                // Asumiré que 'activeValueForHiddenField' (para codigoSemanaDeLaPestana) se sigue calculando como antes.
-                let codigoSemanaContexto = null; // Determina esto basado en el tab activo o si es vencida
-                const activeTabButton = document.querySelector('#nav-tab .nav-link.active');
-                const clickedItem = document.querySelector(`.meta-item-base[data-meta-id="${metaId}"]`);
-
-                if (clickedItem && clickedItem.closest('#metasVencidasSection')) {
-                    codigoSemanaContexto = "0000000";
-                } else if (activeTabButton && activeTabButton.dataset.weekCodeNum) {
-                    codigoSemanaContexto = getCodigoSemanaServidorFormato(activeTabButton.dataset.weekCodeNum);
-                } else {
-                    // Fallback si es necesario, o tal vez no se necesita para el historial.
-                    // Para el historial, solo metaId es crucial. Pero PageMethods necesita todos los params del WebMethod.
-                    // Puedes enviar un valor por defecto si 'codigoSemanaDeLaPestana' ya no tiene sentido para este nuevo propósito.
-                    // O ajustar la firma del WebMethod si estos params ya no se usan para nada.
-                    // Por ahora, lo mantendré por compatibilidad con la firma.
-                    codigoSemanaContexto = getCodigoSemanaServidorFormato(hfActiveWeekNumber.value); // Usar el valor del hidden field como fallback
-                }
-
-
-                PageMethods.GetRespuestaDetalles(metaId, esFinalizable, codigoSemanaContexto,
-                    function (response) {
-                        let result = response.d || response;
-                        console.log("Respuesta de GetRespuestaDetalles para Desempeño:", result);
-
-                        if (result && result.success && result.data) {
-                            // 'result.data.DescripcionMeta' puede usarse si necesitas re-confirmar la descripción.
-                            // 'result.data.HistorialConDocumentos' es la lista que nos interesa.
-                            if (result.data.HistorialConDocumentos && result.data.HistorialConDocumentos.length > 0) {
-                                let historialHtml = '';
-                                result.data.HistorialConDocumentos.forEach(function (respuestaItem) {
-                                    historialHtml += '<div class="historial-respuesta-item">'; // Reutiliza la clase de la otra página
-                                    const fechaEntregado = respuestaItem.FechaEntregado ? new Date(respuestaItem.FechaEntregado).toLocaleString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Fecha no disponible';
-                                    historialHtml += '<span class="historial-fecha">' + fechaEntregado + '</span>';
-                                    historialHtml += '<div class="historial-observacion mb-2">' + (respuestaItem.Descripcion || '<em>Sin observación</em>') + '</div>';
-
-                                    if (respuestaItem.DatosDocs && respuestaItem.DatosDocs.trim() !== "") {
-                                        historialHtml += '<div class="mt-1 mb-2"><small class="fw-semibold d-block mb-1" style="font-size: 0.8em;">Documentos Adjuntos a esta respuesta:</small>';
-                                        historialHtml += '<div class="d-flex flex-wrap">'; // Layout horizontal para documentos
-                                        const documentosArray = respuestaItem.DatosDocs.split('|');
-                                        documentosArray.forEach(function (docEntry) {
-                                            if (docEntry) {
-                                                const partes = docEntry.split(',');
-                                                if (partes.length >= 1) {
-                                                    const urlDoc = partes[0];
-                                                    const nombreDoc = partes.length > 1 ? partes.slice(1).join(',') : 'Documento';
-                                                    historialHtml += `
-                                                <a href="javascript:void(0);"
-                                                   class="btn btn-sm btn-outline-secondary me-1 mb-1 doc-link-popup" 
-                                                   style="font-size: 0.75em; line-height: 1.1; padding: 0.15rem 0.3rem;"
-                                                   data-doc-url="${urlDoc}" 
-                                                   title="Ver documento: ${nombreDoc}">
-                                                   <img src="${lucideBaseUrl}file-text.svg" alt="doc" style="width:0.8em; height:0.8em; vertical-align: text-bottom; margin-right: 0.15rem;"/>
-                                                   <span>${nombreDoc}</span>
-                                                </a>`;
-                                                }
-                                            }
-                                        });
-                                        historialHtml += '</div></div>';
-                                    }
-                                    historialHtml += '</div>';
-                                });
-                                modalHistorialDesempenoJS.innerHTML = historialHtml;
-                            } else {
-                                modalHistorialDesempenoJS.innerHTML = '<span class="text-muted small p-2">No hay historial de respuestas anteriores para esta meta.</span>';
-                            }
-                        } else {
-                            const errorMsg = (result && result.message) ? result.message : 'Respuesta inesperada.';
-                            modalHistorialDesempenoJS.innerHTML = '<span class="text-danger small p-2">Error al cargar historial: ' + errorMsg + '</span>';
-                        }
-                    },
-                    function (error) {
-                        console.error("Error AJAX GetRespuestaDetalles para Desempeño:", error);
-                        const errorMsg = (error && error.get_message) ? error.get_message() : "Error de red/servidor.";
-                        if (modalHistorialDesempenoJS) modalHistorialDesempenoJS.innerHTML = '<span class="text-danger small p-2">Error de red/servidor al cargar historial: ' + errorMsg + '</span>';
+            PageMethods.GetRespuestaDetalles(metaId, esFinalizable, codigoSemanaContexto,
+                function (response) {
+                    if (!response.success || !response.data) {
+                        modalHistorialContainer.innerHTML = '<span class="text-danger small p-2">Error al cargar el historial.</span>';
+                        return;
                     }
-                );
-            }
-            // --- FIN NUEVO: Cargar historial ---
 
-            // Mostrar el modal
-            try {
-                if (respuestaModal && typeof respuestaModal.show === 'function') {
-                    respuestaModal.show();
-                } else { console.error("respuestaModal.show() no es una función."); }
-            } catch (exShow) { console.error("Excepción al mostrar modal:", exShow); }
+                    const data = response.data;
+                    let combinedHistory = [];
+
+                    // Mapea las respuestas del usuario
+                    if (data.HistorialRespuestas) {
+                        data.HistorialRespuestas.forEach(item => {
+                            combinedHistory.push({
+                                fecha: new Date(item.FechaEntregado),
+                                tipo: 'respuesta-usuario',
+                                titulo: 'Tu Respuesta',
+                                descripcion: item.Descripcion || '<em>Sin observación.</em>',
+                                documentos: item.DatosDocs
+                            });
+                        });
+                    }
+
+                    // Mapea las revisiones del jefe
+                    if (data.HistorialRevisiones) {
+                        data.HistorialRevisiones.forEach(item => {
+                            if (item.ComentarioJefe && item.ComentarioJefe.trim() !== '') {
+                                combinedHistory.push({
+                                    fecha: new Date(item.FechaRevision),
+                                    tipo: 'revision-jefe',
+                                    titulo: `Revisión Jefe (${item.TipoAccion})`,
+                                    descripcion: `"${item.ComentarioJefe}"`,
+                                    documentos: null
+                                });
+                            }
+                        });
+                    }
+
+                    // Ordena el historial por fecha (el más reciente primero)
+                    combinedHistory.sort((a, b) => b.fecha - a.fecha);
+
+                    // Construye y muestra el HTML
+                    if (combinedHistory.length > 0) {
+                        let html = '';
+                        combinedHistory.forEach(item => {
+                            const fechaFmt = item.fecha.toLocaleString('es-CR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+                            html += `<div class="historial-item ${item.tipo}">
+                                <span class="fecha">${fechaFmt} - ${item.titulo}</span>
+                                <div class="descripcion">${item.descripcion}</div>`;
+
+                            if (item.documentos) {
+                                html += '<div class="mt-2"><div class="d-flex flex-wrap">';
+                                item.documentos.split('|').forEach(doc => {
+                                    if (!doc) return;
+                                    const partes = doc.split(',');
+                                    const url = partes[0];
+                                    const nombre = partes.length > 1 ? partes.slice(1).join(',') : 'Documento';
+                                    html += `<a href="javascript:void(0);" class="btn btn-sm btn-outline-secondary me-1 mb-1 doc-link-popup" data-doc-url="${url}" title="Ver: ${nombre}">
+                                        <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/file-text.svg" alt="doc" style="width:0.8em; height:0.8em; margin-right: 0.2rem;"/>
+                                        <span>${nombre}</span>
+                                     </a>`;
+                                });
+                                html += '</div></div>';
+                            }
+                            html += '</div>';
+                        });
+                        modalHistorialContainer.innerHTML = html;
+                    } else {
+                        modalHistorialContainer.innerHTML = '<span class="text-muted small p-2">No hay historial de actividad para esta meta.</span>';
+                    }
+                },
+                function (error) {
+                    console.error("Error AJAX GetRespuestaDetalles:", error);
+                    modalHistorialContainer.innerHTML = '<span class="text-danger small p-2">Error de red/servidor al cargar historial.</span>';
+                }
+            );
+
+            // Muestra el modal
+            if (respuestaModal) {
+                respuestaModal.show();
+            }
         }
 
 
