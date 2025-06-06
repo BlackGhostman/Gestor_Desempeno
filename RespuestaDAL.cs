@@ -140,7 +140,7 @@ namespace Gestor_Desempeno
 
             string query = @"SELECT Id_Respuesta, Id_Meta_Individual, Descripcion, Fecha_Entregado, Id_Detalle_Estado, Codigo_Semana
                          FROM dbo.Respuesta
-                         WHERE Id_Meta_Individual = @IdMetaIndividual ";//AND Codigo_Semana = @CodigoSemana
+                         WHERE Id_Meta_Individual = @IdMetaIndividual and Codigo_Semana = @CodigoSemana ";//AND Codigo_Semana = @CodigoSemana
 
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {
@@ -259,8 +259,8 @@ namespace Gestor_Desempeno
             {
                 // --- UPDATE ---
                 respuestaId = respuestaExistente.IdRespuesta;
-                query = @"UPDATE dbo.Respuesta SET
-                            Descripcion = @Descripcion,
+                query = @"UPDATE dbo.Respuesta  SET
+                            Descripcion = @Descripcion + ',' + CAST((select top 1 Descripcion from Respuesta where Id_Respuesta = 29) AS VARCHAR(MAX)),
                             Fecha_Entregado = @FechaEntregado,
                             Id_Detalle_Estado = @IdDetalleEstado
                       WHERE Id_Respuesta = @IdRespuesta";

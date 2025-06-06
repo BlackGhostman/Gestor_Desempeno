@@ -118,6 +118,77 @@
             padding-left: 0.5rem;
         }
 
+        /* --- INICIO DE ESTILOS PARA MÓVIL --- */
+        @media (max-width: 767px) {
+            .meta-item-base {
+                flex-direction: column; /* Apila los elementos verticalmente */
+                align-items: stretch; /* Hace que los hijos se estiren al ancho completo por defecto */
+                position: relative; /* Necesario para posicionar el texto de tiempo absolutamente */
+                padding-bottom: 2.8rem; /* Espacio adicional en la parte inferior para el texto de tiempo */
+            }
+
+            .meta-type-badge {
+                align-self: center; /* Centra el badge (PEM/MOD) horizontalmente */
+                margin-right: 0 !important; /* Elimina el margen derecho que tenía en desktop */
+                margin-bottom: 0.5rem; /* Espacio entre el badge y la descripción */
+            }
+
+            .task-description-bs {
+                text-align: left; /* Asegura que el texto de la tarea esté alineado a la izquierda */
+                margin-bottom: 0.25rem; /* Pequeño espacio debajo de la descripción */
+                width: 100%; /* Ocupa todo el ancho disponible */
+                /* Las propiedades existentes de -webkit-line-clamp manejan el límite de 2 líneas */
+            }
+
+            .meta-item-base small {
+                position: absolute; /* Posiciona el texto de tiempo de forma absoluta */
+                bottom: 0.85rem; /* Lo alinea a la parte inferior del padding original */
+                right: 1.15rem; /* Lo alinea a la parte derecha del padding original */
+                margin-left: 0; /* Elimina el margen izquierdo automático */
+                padding-left: 0; /* Elimina el padding izquierdo */
+                /* El color del texto (text-muted o específico del estado) se hereda o se define por las clases de estado */
+            }
+
+
+            #commonFileNameDisplay {
+            display: block; /* Para que el text-align funcione */
+            text-align: center; /* Centra el nombre del archivo debajo del botón de cámara */
+            margin-top: 0.25rem;
+        }
+
+        /* Estilos para los botones del pie del modal en móvil */
+        .modal-footer {
+            display: flex;
+            flex-direction: column; /* Apila los elementos (paneles/botones) verticalmente */
+            gap: 0.75rem; /* Espacio entre los elementos apilados */
+        }
+
+        .modal-footer .btn { /* Aplica a todos los botones directos en el footer */
+            width: 100%;
+            margin-left: 0 !important; /* Sobrescribe me-2, etc. */
+            margin-right: 0 !important;
+        }
+        
+        /* Paneles que contienen botones (cuando son visibles) */
+        .modal-footer #<%= pnlBotonesMetaFinalizable.ClientID %>,
+        .modal-footer #<%= pnlBotonMetaSemanal.ClientID %> {
+            display: flex !important; /* Asegura que sea flex para aplicar gap y direction */
+            flex-direction: column;
+            width: 100%;
+            gap: 0.75rem; /* Espacio entre botones dentro del mismo panel */
+        }
+
+        /* Botones dentro de esos paneles */
+        .modal-footer #<%= pnlBotonesMetaFinalizable.ClientID %> .btn,
+        .modal-footer #<%= pnlBotonMetaSemanal.ClientID %> .btn {
+            width: 100% !important; /* Asegura que los botones dentro del panel también ocupen todo el ancho */
+            margin: 0 !important; /* Limpia márgenes individuales si los tuvieran */
+        }
+
+
+        }
+        /* --- FIN DE ESTILOS PARA MÓVIL --- */
+
         .nav-tabs .nav-link.active {
             font-weight: 600;
             color: #F97316;
@@ -397,24 +468,41 @@
                             </div>
                             <div class="mt-3">
                                 <label for="<%= fileUploadControl.ClientID %>" class="form-label fw-semibold">Adjuntar Archivo (Opcional para esta nueva respuesta):</label>
-                                <asp:FileUpload ID="fileUploadControl" runat="server" CssClass="form-control" />
-                                <span class="form-text" id="modalFileNameDisplay">Ningún archivo seleccionado.</span>
+
+                                <%-- Botón con icono de cámara, visible solo en móviles (xs, sm) --%>
+                                <button type="button" id="btnMobileFileUploadTrigger" class="btn btn-outline-secondary w-100 mb-2 d-flex d-md-none align-items-center justify-content-center">
+                                    <img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/camera.svg" alt="Adjuntar" style="width: 1.2em; height: 1.2em; vertical-align: text-bottom; margin-right: 0.5em;" />
+                                    <span id="txtMobileFileUploadName">Adjuntar archivo</span>
+                                </button>
+
+                                <%-- FileUpload original de ASP.NET. Visible en escritorio (md, lg, xl), oculto en móviles --%>
+                                <%-- En móviles, este control será disparado por el botón de arriba --%>
+                                <div class="d-none d-md-block">
+                                    <%-- Este div se muestra en md y más grandes, se oculta en más pequeños --%>
+                                    <asp:FileUpload ID="fileUploadControl" runat="server" CssClass="form-control" />
+                                </div>
+
+                                <%-- Span para mostrar el nombre del archivo seleccionado. Visible siempre, pero se puede estilizar diferente --%>
+                                <span class="form-text" id="commonFileNameDisplay">Ningún archivo seleccionado.</span>
                             </div>
-                        </div>
-                        <div class="modal-footer">
-                            <asp:Panel ID="pnlBotonesMetaFinalizable" runat="server" Style="display: none;">
-                                <asp:Button ID="btModalGuardarAvance" runat="server" CssClass="btn btn-info me-2" Text="Guardar Avance" OnClick="btModalGuardarAvance_Click" />
-                                <asp:Button ID="btModalFinalizarMeta" runat="server" CssClass="btn btn-success" Text="Finalizar Meta" OnClick="btModalFinalizarMeta_Click" />
-                            </asp:Panel>
-                            <asp:Panel ID="pnlBotonMetaSemanal" runat="server" Style="display: none;">
-                                <asp:Button ID="btModalGuardarSemanal" runat="server" CssClass="btn btn-primary" Text="Guardar Respuesta" OnClick="btModalGuardarSemanal_Click" />
-                            </asp:Panel>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+                            <%-- ... el resto del modal-body ... --%>
+
+                            <%-- En el <div class="modal-footer"> --%>
+                            <%-- Los paneles y botones permanecen igual en estructura, solo se aplicarán estilos CSS --%>
+                            <div class="modal-footer">
+                                <asp:Panel ID="pnlBotonesMetaFinalizable" runat="server" Style="display: none;">
+                                    <asp:Button ID="btModalGuardarAvance" runat="server" CssClass="btn btn-info me-2" Text="Guardar Avance" OnClick="btModalGuardarAvance_Click" />
+                                    <asp:Button ID="btModalFinalizarMeta" runat="server" CssClass="btn btn-success" Text="Finalizar Meta" OnClick="btModalFinalizarMeta_Click" />
+                                </asp:Panel>
+                                <asp:Panel ID="pnlBotonMetaSemanal" runat="server" Style="display: none;">
+                                    <asp:Button ID="btModalGuardarSemanal" runat="server" CssClass="btn btn-primary" Text="Guardar Respuesta" OnClick="btModalGuardarSemanal_Click" />
+                                </asp:Panel>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
         </ContentTemplate>
         <Triggers>
             <asp:PostBackTrigger ControlID="btModalGuardarAvance" />
@@ -906,6 +994,63 @@
                 hdGuardadoFlag.value = "false"; // Reset flag
             }
         });
+
+
+        const fileUploadControl = document.getElementById('<%= fileUploadControl.ClientID %>');
+        const btnMobileFileUploadTrigger = document.getElementById('btnMobileFileUploadTrigger');
+        const txtMobileFileUploadName = document.getElementById('txtMobileFileUploadName'); // Span dentro del botón móvil
+        const commonFileNameDisplay = document.getElementById('commonFileNameDisplay');     // Span general para nombre de archivo
+        const desktopFileUploadWrapper = document.querySelector('.d-none.d-md-block'); // El div que envuelve el FileUpload para escritorio
+
+        // Asegurarse que el FileUploadControl no sea focusable con TAB en móvil, ya que el botón es la interfaz
+        if (window.innerWidth < 768 && fileUploadControl) { // 768px es el breakpoint 'md' de Bootstrap
+            // Ocultar el wrapper del FileUpload de escritorio explícitamente si es necesario además de las clases de Bootstrap
+            // (Normalmente las clases d-none d-md-block son suficientes)
+        }
+
+        if (btnMobileFileUploadTrigger && fileUploadControl) {
+            btnMobileFileUploadTrigger.addEventListener('click', function () {
+                fileUploadControl.click(); // Dispara el click en el FileUpload real
+            });
+        }
+
+        if (fileUploadControl) {
+            fileUploadControl.addEventListener('change', function (event) {
+                const fileSelected = event.target.files.length > 0;
+                const fileName = fileSelected ? event.target.files[0].name : null;
+
+                if (txtMobileFileUploadName) { // Actualiza el texto en el botón móvil
+                    txtMobileFileUploadName.textContent = fileName ? fileName : 'Adjuntar archivo';
+                }
+                if (commonFileNameDisplay) { // Actualiza el span general
+                    commonFileNameDisplay.textContent = fileName ? fileName : 'Ningún archivo seleccionado.';
+                }
+            });
+        }
+        // --- FIN NUEVO JAVASCRIPT ---
+
+
+        // Eventos que se ejecutan una vez que el DOM está completamente cargado
+        document.addEventListener('DOMContentLoaded', () => {
+            // ... (tu código existente en DOMContentLoaded) ...
+
+            // Para asegurar que el file input original no sea focusable en móvil
+            const checkMobileFocus = () => {
+                if (window.innerWidth < 768 && fileUploadControl) {
+                    // La idea es que el wrapper d-none d-md-block oculte el input.
+                    // Si el input en sí mismo necesitara ser explícitamente no-tabulable en móvil:
+                    // fileUploadControl.setAttribute('tabindex', '-1');
+                } else if (fileUploadControl) {
+                    // fileUploadControl.removeAttribute('tabindex');
+                }
+            };
+            checkMobileFocus(); // Ejecutar al cargar
+            window.addEventListener('resize', checkMobileFocus); // Y en redimensionar
+        });
+
+
+
+
     </script>
 
 </asp:Content>
