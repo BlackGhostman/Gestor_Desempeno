@@ -379,6 +379,7 @@ namespace Gestor_Desempeno
                     BindGrid();
                     MostrarMensaje(actionMessage, true);
                     ScriptManager.RegisterStartupScript(this, this.GetType(), "HideMetaIndModalScript", "hideModal('metaIndModal');", true);
+                    return;
                 }
                 else
                 {

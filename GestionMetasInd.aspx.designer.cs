@@ -60,15 +60,6 @@ namespace Gestor_Desempeno
         protected global::System.Web.UI.WebControls.TextBox txtNumMetaFiltro;
 
         /// <summary>
-        /// Control cvNumMetaFiltro.
-        /// </summary>
-        /// <remarks>
-        /// Campo generado automáticamente.
-        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.CompareValidator cvNumMetaFiltro;
-
-        /// <summary>
         /// Control ddlUsuarioFiltro.
         /// </summary>
         /// <remarks>
@@ -112,15 +103,6 @@ namespace Gestor_Desempeno
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnAbrirModalAgregar;
-
-        /// <summary>
-        /// Control UpdatePanelModalContent.
-        /// </summary>
-        /// <remarks>
-        /// Campo generado automáticamente.
-        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
-        /// </remarks>
-        protected global::System.Web.UI.UpdatePanel UpdatePanelModalContent;
 
         /// <summary>
         /// Control lblModalTitle.
@@ -204,15 +186,6 @@ namespace Gestor_Desempeno
         protected global::System.Web.UI.WebControls.TextBox txtModalPesoN4;
 
         /// <summary>
-        /// Control rvModalPesoN4.
-        /// </summary>
-        /// <remarks>
-        /// Campo generado automáticamente.
-        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RangeValidator rvModalPesoN4;
-
-        /// <summary>
         /// Control txtModalPesoN5.
         /// </summary>
         /// <remarks>
@@ -220,15 +193,6 @@ namespace Gestor_Desempeno
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox txtModalPesoN5;
-
-        /// <summary>
-        /// Control rvModalPesoN5.
-        /// </summary>
-        /// <remarks>
-        /// Campo generado automáticamente.
-        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RangeValidator rvModalPesoN5;
 
         /// <summary>
         /// Control ddlModalEstado.

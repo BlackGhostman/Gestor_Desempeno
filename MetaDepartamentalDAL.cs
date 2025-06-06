@@ -39,7 +39,7 @@ namespace Gestor_Desempeno
             get
             {
                 // Combine relevant info for easy selection
-                return $"{(NumMetaPadre.HasValue ? NumMetaPadre.Value + ". " : "")}{NombreAreaEjecutora ?? "Sin Área"} - {Descripcion?.Substring(0, Math.Min(Descripcion.Length, 50)) ?? "Sin Desc."}...";
+                return $"{(NumMetaPadre.HasValue ? NumMetaPadre.Value + ". " : "")} {Descripcion?.Substring(0, Math.Min(Descripcion.Length, 50)) ?? "Sin Desc."}...";
             }
         }
     }
