@@ -101,8 +101,7 @@
              <div class="modal fade" id="metaModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="metaModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-lg modal-dialog-centered">
                     <div class="modal-content">
-                        <asp:UpdatePanel ID="UpdatePanelModalContent" runat="server" UpdateMode="Conditional">
-                            <ContentTemplate>
+                        
                                 <div class="modal-header">
                                     <h5 class="modal-title" id="metaModalLabel">
                                         <asp:Label ID="lblModalTitle" runat="server" Text="Meta"></asp:Label>
@@ -140,11 +139,7 @@
                                     <asp:Button ID="btnGuardarModal" runat="server" Text="Guardar" CssClass="btn btn-primary" OnClick="btnGuardarModal_Click" ValidationGroup="ModalValidation" />
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                 </div>
-                            </ContentTemplate>
-                             <Triggers>
-                                 <asp:AsyncPostBackTrigger ControlID="btnGuardarModal" EventName="Click" />
-                             </Triggers>
-                        </asp:UpdatePanel>
+                            
                     </div>
                 </div>
             </div> <%-- End Modal --%>
@@ -159,6 +154,7 @@
              <asp:AsyncPostBackTrigger ControlID="gvMetas" EventName="PageIndexChanging" />
              <asp:AsyncPostBackTrigger ControlID="gvMetas" EventName="RowCommand" />
              <asp:AsyncPostBackTrigger ControlID="btnAbrirModalAgregar" EventName="Click" />
+             <asp:AsyncPostBackTrigger ControlID="btnGuardarModal" EventName="Click" />
              <%-- btnGuardarModal is inside its own UpdatePanel --%>
          </Triggers>
     </asp:UpdatePanel> <%-- End UpdatePanelPage --%>
@@ -174,15 +170,35 @@
              }
          }
 
-         function hideModal(modalId) {
-              var modalElement = document.getElementById(modalId);
-             if (modalElement) {
-                 var modal = bootstrap.Modal.getInstance(modalElement); // Get existing instance
-                 if (modal && modal._isShown) { // Check if modal is shown before trying to hide
-                     modal.hide();
-                 }
-             }
-         }
+        function hideModal(modalId) {
+            var modalElement = document.getElementById(modalId);
+            if (modalElement) {
+                var modal = bootstrap.Modal.getInstance(modalElement);
+
+                // Oculta el modal si se está mostrando
+                if (modal && modal._isShown) {
+                    modal.hide();
+                }
+
+                // ---- INICIO DE LA CORRECCIÓN PARA LA PANTALLA OSCURA ----
+                // A veces, después de un postback, el fondo no se elimina.
+                // Las siguientes líneas fuerzan la limpieza para asegurar que la página vuelva a la normalidad.
+
+                // 1. Elimina cualquier 'backdrop' (fondo oscuro) que haya quedado.
+                const backdrops = document.getElementsByClassName('modal-backdrop');
+                while (backdrops.length > 0) {
+                    backdrops[0].parentNode.removeChild(backdrops[0]);
+                }
+
+                // 2. Quita la clase del <body> que impide el scroll.
+                document.body.classList.remove('modal-open');
+
+                // 3. Restablece los estilos del <body> que el modal modifica.
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+                // ---- FIN DE LA CORRECCIÓN ----
+            }
+        }
 
          // Inicialización
          document.addEventListener('DOMContentLoaded', () => {

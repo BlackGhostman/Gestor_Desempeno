@@ -65,8 +65,8 @@ namespace Gestor_Desempeno
                 int? tipoObjFiltro = GetNullableIntFromDDL(ddlTipoObjetivoFiltro);
                 int? objetivoFiltro = GetNullableIntFromDDL(ddlObjetivoFiltro);
                 int? numMetaFiltro = GetNullableIntFromTextBox(txtNumMetaFiltro);
-
-                List<MetaInfo> metas = metaDAL.ObtenerMetas(tipoObjFiltro, objetivoFiltro, numMetaFiltro);
+                int? Id_Detalle_Estado = 3;
+                List<MetaInfo> metas = metaDAL.ObtenerMetas(tipoObjFiltro, objetivoFiltro, numMetaFiltro, Id_Detalle_Estado);
                 gvMetas.DataSource = metas;
                 gvMetas.DataBind();
                 litMensaje.Visible = false;

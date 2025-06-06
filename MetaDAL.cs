@@ -33,7 +33,7 @@ namespace Gestor_Desempeno
         }
 
         // Método para obtener Metas con filtros opcionales
-        public List<MetaInfo> ObtenerMetas(int? idTipoObjetivoFiltro = null, int? idObjetivoFiltro = null, int? numMetaFiltro = null)
+        public List<MetaInfo> ObtenerMetas(int? idTipoObjetivoFiltro = null, int? idObjetivoFiltro = null, int? numMetaFiltro = null, int? Id_Detalle_Estado = null)
         {
             List<MetaInfo> lista = new List<MetaInfo>();
             var parameters = new Dictionary<string, object>();
@@ -69,6 +69,11 @@ namespace Gestor_Desempeno
             {
                 whereClause.Append(" AND m.Num_Meta = @NumMetaFiltro");
                 parameters.Add("@NumMetaFiltro", numMetaFiltro.Value);
+            }
+            if (Id_Detalle_Estado.HasValue) // Num_Meta puede ser 0 o cualquier número
+            {
+                whereClause.Append(" AND m.Id_Detalle_Estado = @Id_Detalle_Estado");
+                parameters.Add("@Id_Detalle_Estado", Id_Detalle_Estado.Value);
             }
 
             // Añadir el WHERE si hay condiciones
