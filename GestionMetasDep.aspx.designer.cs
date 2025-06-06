@@ -96,15 +96,6 @@ namespace Gestor_Desempeno
         protected global::System.Web.UI.WebControls.Button btnAbrirModalAgregar;
 
         /// <summary>
-        /// Control UpdatePanelModalContent.
-        /// </summary>
-        /// <remarks>
-        /// Campo generado automáticamente.
-        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
-        /// </remarks>
-        protected global::System.Web.UI.UpdatePanel UpdatePanelModalContent;
-
-        /// <summary>
         /// Control lblModalTitle.
         /// </summary>
         /// <remarks>
@@ -177,6 +168,24 @@ namespace Gestor_Desempeno
         protected global::System.Web.UI.WebControls.TextBox txtModalDescMetaDep;
 
         /// <summary>
+        /// Control txtModalIndicador.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtModalIndicador;
+
+        /// <summary>
+        /// Control txtModalAlcance.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtModalAlcance;
+
+        /// <summary>
         /// Control txtModalPeso.
         /// </summary>
         /// <remarks>
@@ -186,15 +195,6 @@ namespace Gestor_Desempeno
         protected global::System.Web.UI.WebControls.TextBox txtModalPeso;
 
         /// <summary>
-        /// Control rvModalPeso.
-        /// </summary>
-        /// <remarks>
-        /// Campo generado automáticamente.
-        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RangeValidator rvModalPeso;
-
-        /// <summary>
         /// Control txtModalPrioridad.
         /// </summary>
         /// <remarks>
@@ -202,15 +202,6 @@ namespace Gestor_Desempeno
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox txtModalPrioridad;
-
-        /// <summary>
-        /// Control rvModalPrioridad.
-        /// </summary>
-        /// <remarks>
-        /// Campo generado automáticamente.
-        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.RangeValidator rvModalPrioridad;
 
         /// <summary>
         /// Control ddlModalEstado.
@@ -247,24 +238,6 @@ namespace Gestor_Desempeno
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox txtModalFechaFin;
-
-        /// <summary>
-        /// Control txtModalIndicador.
-        /// </summary>
-        /// <remarks>
-        /// Campo generado automáticamente.
-        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtModalIndicador;
-
-        /// <summary>
-        /// Control txtModalAlcance.
-        /// </summary>
-        /// <remarks>
-        /// Campo generado automáticamente.
-        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox txtModalAlcance;
 
         /// <summary>
         /// Control btnGuardarModal.

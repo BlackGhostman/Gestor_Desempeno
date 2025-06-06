@@ -105,7 +105,7 @@ namespace Gestor_Desempeno
                 var displayList = metas.Select(m => new {
                     IdMeta = m.IdMeta,
                     // Use the combined display text property from MetaInfo
-                    DisplayText = TruncateStringWithEllipsis($"{m.NumMeta ?? 0}. {m.NombreObjetivo ?? "N/A"} - {m.Descripcion ?? ""}", 70) // Truncate for dropdown
+                    DisplayText = TruncateStringWithEllipsis($"{m.NumMeta ?? 0}. {m.Descripcion ?? ""}", 70) // Truncate for dropdown
                 }).ToList();
                 ddl.DataSource = displayList;
                 ddl.DataTextField = "DisplayText"; ddl.DataValueField = "IdMeta";
