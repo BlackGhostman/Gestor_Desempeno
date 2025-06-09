@@ -56,7 +56,7 @@ namespace Gestor_Desempeno
         private const int ID_CLASE_META_DEP = 3;
 
         // Método para obtener Metas Departamentales con filtros
-        public List<MetaDepartamentalInfo> ObtenerMetasDepartamentales(string usuario, int? idTipoObjetivoFiltro = null, int? numMetaFiltro = null, int? idAreaEjecutoraFiltro = null) // Added Area filter
+        public List<MetaDepartamentalInfo> ObtenerMetasDepartamentales(string usuario, int Id_Detalle_Estado , int? idTipoObjetivoFiltro = null, int? numMetaFiltro = null, int? idAreaEjecutoraFiltro = null) // Added Area filter
         {
             List<MetaDepartamentalInfo> lista = new List<MetaDepartamentalInfo>();
             var parameters = new Dictionary<string, object>();
@@ -98,6 +98,11 @@ namespace Gestor_Desempeno
             {
                 whereClause.Append(" AND md.Id_Area_Ejecutora = @IdAreaEjecutoraFiltro");
                 parameters.Add("@IdAreaEjecutoraFiltro", idAreaEjecutoraFiltro.Value);
+            }
+            if ( Id_Detalle_Estado > 0) // Added Area filter condition
+            {
+                whereClause.Append(" AND md.Id_Detalle_Estado = @Id_Detalle_Estado");
+                parameters.Add("@Id_Detalle_Estado", Id_Detalle_Estado);
             }
             if (usuario != "") // Added Area filter condition
             {

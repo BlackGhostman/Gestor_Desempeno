@@ -63,8 +63,9 @@ namespace Gestor_Desempeno
             {
                 int? tipoObjFiltro = GetNullableIntFromDDL(ddlTipoObjetivoFiltro);
                 int? numMetaFiltro = GetNullableIntFromTextBox(txtNumMetaFiltro);
+                int Id_Detalle_Estado = 5;
 
-                List<MetaDepartamentalInfo> metasDep = metaDepDAL.ObtenerMetasDepartamentales(Session["UsuarioID"].ToString(), tipoObjFiltro, numMetaFiltro);
+                List<MetaDepartamentalInfo> metasDep = metaDepDAL.ObtenerMetasDepartamentales(Session["UsuarioID"].ToString(), Id_Detalle_Estado, tipoObjFiltro, numMetaFiltro);
                 gvMetasDep.DataSource = metasDep;
                 gvMetasDep.DataBind();
                 litMensaje.Visible = false;
@@ -207,22 +208,51 @@ namespace Gestor_Desempeno
             catch (Exception ex) { MostrarMensaje($"Error al cargar datos para editar: {ex.Message}", false); Console.WriteLine($"Error CargarDatosModalParaEditar (MetaDep): {ex}"); }
         }
 
-        // Botón "Guardar" del Modal
         protected void btnGuardarModal_Click(object sender, EventArgs e)
         {
+            // 1. Validar la página primero
             Page.Validate("ModalValidation");
             if (!Page.IsValid)
             {
-                MostrarMensajeModal("Corrija los errores.", false);
+                MostrarMensajeModal("Por favor corrija los errores.", false);
+                // Mantenemos el modal abierto si la validación falla
                 ScriptManager.RegisterStartupScript(this, this.GetType(), "ReShowMetaDepModalOnError", "showModal('metaDepModal');", true);
-                return;
+                return; // Salimos del método
             }
 
+            // 2. Validaciones adicionales de lógica de negocio en un solo lugar
+            int? idMeta = GetNullableIntFromDDL(ddlModalMeta);
+            int? idArea = GetNullableIntFromDDL(ddlModalArea);
+            int? idEstado = GetNullableIntFromDDL(ddlModalEstado);
+
+            // Reiniciamos el mensaje modal para cada intento
+            litModalMensaje.Visible = false;
+
+            if (!idMeta.HasValue)
+            {
+                MostrarMensajeModal("Debe seleccionar una Meta Padre.", false);
+            }
+            else if (!idArea.HasValue)
+            {
+                MostrarMensajeModal("Debe seleccionar un Área Ejecutora.", false);
+            }
+            else if (!idEstado.HasValue)
+            {
+                MostrarMensajeModal("Debe seleccionar un Estado.", false);
+            }
+
+            // Si la propiedad Visible de litModalMensaje se hizo true, es que hubo un error
+            if (litModalMensaje.Visible)
+            {
+                ScriptManager.RegisterStartupScript(this, this.GetType(), "ReShowMetaDepModalOnError", "showModal('metaDepModal');", true);
+                return; // Salimos del método
+            }
+
+            // 3. Si todas las validaciones pasan, procedemos a guardar
             try
             {
                 int metaDepId = Convert.ToInt32(hfMetaDepId.Value);
-                int? idMeta = GetNullableIntFromDDL(ddlModalMeta);
-                int? idArea = GetNullableIntFromDDL(ddlModalArea);
+                // Obtener el resto de los valores
                 string desc = txtModalDescMetaDep.Text.Trim();
                 int? peso = GetNullableIntFromTextBox(txtModalPeso);
                 string indicador = txtModalIndicador.Text.Trim();
@@ -230,49 +260,44 @@ namespace Gestor_Desempeno
                 int? prioridad = GetNullableIntFromTextBox(txtModalPrioridad);
                 DateTime? fechaIni = GetNullableDateTimeFromTextBox(txtModalFechaIni);
                 DateTime? fechaFin = GetNullableDateTimeFromTextBox(txtModalFechaFin);
-                int? idEstado = GetNullableIntFromDDL(ddlModalEstado);
 
-                bool success = false; string actionMessage = "";
+                bool success = false;
+                string actionMessage = "";
 
-                // Validations
-                if (!idMeta.HasValue) { MostrarMensajeModal("Seleccione Meta Padre.", false); goto ShowModalOnError; }
-                if (!idArea.HasValue) { MostrarMensajeModal("Seleccione Área Ejecutora.", false); goto ShowModalOnError; }
-                if (!idEstado.HasValue) { MostrarMensajeModal("Seleccione Estado.", false); goto ShowModalOnError; }
-
-                if (metaDepId > 0)
-                { // Editar
+                if (metaDepId > 0) // Lógica para Editar
+                {
                     success = metaDepDAL.ActualizarMetaDepartamental(metaDepId, idMeta, idArea, desc, peso, indicador, alcance, prioridad, fechaIni, fechaFin, idEstado);
-                    actionMessage = success ? "Meta Departamental actualizada." : "Error al actualizar.";
+                    actionMessage = success ? "Meta Departamental actualizada correctamente." : "Error al actualizar la meta.";
                 }
-                else
-                { // Agregar
+                else // Lógica para Agregar
+                {
                     int nuevoId = metaDepDAL.InsertarMetaDepartamental(idMeta, idArea, desc, peso, indicador, alcance, prioridad, fechaIni, fechaFin, idEstado);
                     success = (nuevoId > 0);
-                    actionMessage = success ? "Meta Departamental agregada." : "Error al agregar.";
+                    actionMessage = success ? "Meta Departamental agregada correctamente." : "Error al agregar la meta.";
                 }
 
+                // 4. Decidir si cerrar o mantener el modal
                 if (success)
                 {
+                    // Si fue exitoso, refresca la tabla, muestra el mensaje en la página principal y cierra el modal
                     BindGrid();
                     MostrarMensaje(actionMessage, true);
                     ScriptManager.RegisterStartupScript(this, this.GetType(), "HideMetaDepModalScript", "hideModal('metaDepModal');", true);
+                    // No se necesita un 'return' aquí porque no hay más código debajo en el bloque 'try'
                 }
                 else
                 {
+                    // Si no fue exitoso, muestra el error dentro del modal y mantenlo abierto
                     MostrarMensajeModal(actionMessage, false);
-                    goto ShowModalOnError; // Keep modal open
+                    ScriptManager.RegisterStartupScript(this, this.GetType(), "ReShowMetaDepModalOnError", "showModal('metaDepModal');", true);
                 }
             }
             catch (Exception ex)
             {
-                MostrarMensajeModal($"Error al guardar: {ex.Message}", false);
+                MostrarMensajeModal($"Error inesperado al guardar: {ex.Message}", false);
                 Console.WriteLine($"Error btnGuardarModal_Click (MetaDep): {ex}");
-                goto ShowModalOnError; // Keep modal open on exception
+                ScriptManager.RegisterStartupScript(this, this.GetType(), "ReShowMetaDepModalOnError", "showModal('metaDepModal');", true);
             }
-
-        // Label used to jump here on validation/save error to keep modal open
-        ShowModalOnError:
-            ScriptManager.RegisterStartupScript(this, this.GetType(), "ReShowMetaDepModalOnError", "showModal('metaDepModal');", true);
         }
 
         // Lógica para Eliminar

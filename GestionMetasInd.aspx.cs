@@ -183,6 +183,7 @@ namespace Gestor_Desempeno
             LoadMetasDepDropdown(ddlModalMetaDep, "-- Seleccione Meta Dep. --");
             LoadEstadosDropdown(ddlModalEstado, "-- Seleccione Estado --", ID_CLASE_META_IND); // Filter by Class 4
             LoadUsuariosFiltroDropdown(ddlModalUsuario, "-- Seleccione Usuario --");
+            
         }
 
         // Métodos genéricos para cargar DropDownLists
@@ -196,9 +197,10 @@ namespace Gestor_Desempeno
         }
         private void LoadMetasDepDropdown(DropDownList ddl, string initialText)
         {
+            int Id_Detalle_Estado = 5;
             if (ddl == null) return; try
             {
-                ddl.DataSource = metaDepDAL.ObtenerMetasDepartamentales(Session["UsuarioID"].ToString());
+                ddl.DataSource = metaDepDAL.ObtenerMetasDepartamentales(Session["UsuarioID"].ToString(), Id_Detalle_Estado);
                 ddl.DataTextField = "DisplayTextForDropdown";
                 ddl.DataValueField = "IdMetaDepartamental";
                 ddl.DataBind(); ddl.Items.Insert(0, new ListItem(initialText, "0"));
@@ -259,14 +261,22 @@ namespace Gestor_Desempeno
             }
         }
 
-        // Botón "Agregar Nueva Meta Individual"
+        // En tu archivo GestionMetasInd.aspx.cs
+
         protected void btnAbrirModalAgregar_Click(object sender, EventArgs e)
         {
             hfMetaIndId.Value = "0";
             lblModalTitle.Text = "Agregar Nueva Meta Individual";
-            LimpiarCamposModal();
             litModalMensaje.Visible = false;
+
+            // ===== ORDEN CORREGIDO =====
+            // 1. Primero, nos aseguramos de que los dropdowns tengan todas las opciones.
             LoadModalDropdowns();
+
+            // 2. Después, limpiamos cualquier selección previa y reseteamos los campos.
+            LimpiarCamposModal();
+
+            // 3. Finalmente, mostramos el modal.
             ScriptManager.RegisterStartupScript(this, this.GetType(), "ShowMetaIndModalScript", "showModal('metaIndModal');", true);
         }
 
