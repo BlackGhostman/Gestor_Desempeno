@@ -93,7 +93,7 @@ namespace Gestor_Desempeno
             }
             try
             {
-                const int idMetaDepartamental = 2;
+                const int idMetaDepartamental = 8;
                 const int idDetalleEstado = 7;
 
                 string usuarioSeleccionado = ddlUsuario.SelectedValue;

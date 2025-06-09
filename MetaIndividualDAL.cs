@@ -503,7 +503,7 @@ namespace Gestor_Desempeno
                     cmd.Parameters.AddWithValue("@Descripcion", descripcion);
                     cmd.Parameters.AddWithValue("@Fecha_Inicial", fechaInicial);
                     cmd.Parameters.AddWithValue("@Fecha_Final", fechaFinal);
-                    cmd.Parameters.AddWithValue("@Es_Finalizable", !esFinalizable);
+                    cmd.Parameters.AddWithValue("@Es_Finalizable", esFinalizable);
                     cmd.Parameters.AddWithValue("@Id_Detalle_Estado", idDetalleEstado);
                     con.Open();
                     cmd.ExecuteNonQuery();

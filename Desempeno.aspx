@@ -878,38 +878,66 @@
         });
 
 
+
+
+
+
+        // Reemplaza el bloque de JavaScript para el FileUpload con este
         const fileUploadControl = document.getElementById('<%= fileUploadControl.ClientID %>');
         const btnMobileFileUploadTrigger = document.getElementById('btnMobileFileUploadTrigger');
-        const txtMobileFileUploadName = document.getElementById('txtMobileFileUploadName'); // Span dentro del botón móvil
-        const commonFileNameDisplay = document.getElementById('commonFileNameDisplay');     // Span general para nombre de archivo
-        const desktopFileUploadWrapper = document.querySelector('.d-none.d-md-block'); // El div que envuelve el FileUpload para escritorio
+        const txtMobileFileUploadName = document.getElementById('txtMobileFileUploadName');
+        const commonFileNameDisplay = document.getElementById('commonFileNameDisplay');
 
-        // Asegurarse que el FileUploadControl no sea focusable con TAB en móvil, ya que el botón es la interfaz
-        if (window.innerWidth < 768 && fileUploadControl) { // 768px es el breakpoint 'md' de Bootstrap
-            // Ocultar el wrapper del FileUpload de escritorio explícitamente si es necesario además de las clases de Bootstrap
-            // (Normalmente las clases d-none d-md-block son suficientes)
-        }
+        // Límite de tamaño en Bytes (debe coincidir con el web.config, ej. 50MB)
+        const maxFileSizeInBytes = 52428800;
 
         if (btnMobileFileUploadTrigger && fileUploadControl) {
             btnMobileFileUploadTrigger.addEventListener('click', function () {
-                fileUploadControl.click(); // Dispara el click en el FileUpload real
+                fileUploadControl.click();
             });
         }
 
         if (fileUploadControl) {
             fileUploadControl.addEventListener('change', function (event) {
-                const fileSelected = event.target.files.length > 0;
-                const fileName = fileSelected ? event.target.files[0].name : null;
+                const fileSelected = this.files && this.files.length > 0;
+                let fileName = null;
 
-                if (txtMobileFileUploadName) { // Actualiza el texto en el botón móvil
+                if (fileSelected) {
+                    const file = this.files[0];
+
+                    // --- INICIO DE LA NUEVA VALIDACIÓN ---
+                    if (file.size > maxFileSizeInBytes) {
+                        // Muestra un error claro
+                        //showFeedback(`Error: El archivo es demasiado grande (${(file.size / 1024 / 1024).toFixed(1)} MB). El límite es de ${(maxFileSizeInBytes / 1024 / 1024)} MB.`, 'danger');
+                        alert(`Error: El archivo es demasiado grande (${(file.size / 1024 / 1024).toFixed(1)} MB). El límite es de ${(maxFileSizeInBytes / 1024 / 1024)} MB.`, 'danger');
+
+                        // Limpia el control para que no se intente subir el archivo
+                        this.value = '';
+
+                        // Resetea los textos
+                        if (txtMobileFileUploadName) { txtMobileFileUploadName.textContent = 'Adjuntar archivo'; }
+                        if (commonFileNameDisplay) { commonFileNameDisplay.textContent = 'Ningún archivo seleccionado.'; }
+
+                        return; // Detiene la ejecución para no continuar
+                    }
+                    // --- FIN DE LA NUEVA VALIDACIÓN ---
+
+                    fileName = file.name;
+                }
+
+                // Actualiza los textos con el nombre del archivo (si pasó la validación)
+                if (txtMobileFileUploadName) {
                     txtMobileFileUploadName.textContent = fileName ? fileName : 'Adjuntar archivo';
                 }
-                if (commonFileNameDisplay) { // Actualiza el span general
+                if (commonFileNameDisplay) {
                     commonFileNameDisplay.textContent = fileName ? fileName : 'Ningún archivo seleccionado.';
                 }
             });
         }
-        // --- FIN NUEVO JAVASCRIPT ---
+
+
+
+
 
 
         // Eventos que se ejecutan una vez que el DOM está completamente cargado
