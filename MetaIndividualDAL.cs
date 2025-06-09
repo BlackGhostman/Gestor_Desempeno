@@ -333,7 +333,7 @@ namespace Gestor_Desempeno
         // Método para obtener Metas Individuales con filtros
 
 
-        public List<MetaIndividualInfo> ObtenerMetasIndividuales(
+        public List<MetaIndividualInfo> ObtenerMetasIndividuales( int Id_Detalle_Estado,
         int? idTipoObjetivoFiltro = null,
         int? numMetaFiltro = null,
         int? idAreaEjecutoraFiltro = null,
@@ -388,6 +388,11 @@ namespace Gestor_Desempeno
             {
                 whereClause.Append(" AND mi.Usuario = @UsuarioFiltro");
                 parameters.Add("@UsuarioFiltro", usuarioFiltro.Trim());
+            }
+            if (Id_Detalle_Estado > 0)
+            {
+                whereClause.Append(" AND mi.Id_Detalle_Estado = @Id_Detalle_Estado");
+                parameters.Add("@Id_Detalle_Estado", Id_Detalle_Estado);
             }
 
             // ----- SECCIÓN CORREGIDA PARA usuariosFiltro (CON ELIMINACIÓN DE COMILLAS SIMPLES) -----
@@ -476,10 +481,10 @@ namespace Gestor_Desempeno
         }
 
         // Method to get metas for a specific user (used by Desempeno page)
-        public List<MetaIndividualInfo> ObtenerMetasIndividualesPorUsuario(string usuario)
+        public List<MetaIndividualInfo> ObtenerMetasIndividualesPorUsuario(string usuario, int ID_ESTADO_ACTIVO_META_IND)
         {
             // This method now simply calls the main filtering method with only the user filter applied
-            return ObtenerMetasIndividuales(null, null, null, usuario,null);
+            return ObtenerMetasIndividuales(ID_ESTADO_ACTIVO_META_IND, null, null, null, usuario,null);
         }
 
         // Método para "Metas Rápidas" que se alinea con la tabla [Meta_Individual].

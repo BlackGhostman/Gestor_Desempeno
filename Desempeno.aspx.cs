@@ -33,6 +33,7 @@ namespace Gestor_Desempeno
         // Constants for Estado IDs
         private const int ID_ESTADO_RESPONDIDO = 11;
         private const int ID_ESTADO_ACTIVO_SEMANAL = 9;
+        public int ID_ESTADO_ACTIVO_META_IND = 7;
         private const int ID_CLASE_META_IND = 4;
         private static int? ID_ESTADO_INACTIVO_META_IND = null;
 
@@ -99,7 +100,7 @@ namespace Gestor_Desempeno
             {
                 // 1. Obtener TODAS las metas asignadas al usuario.
                 //    Tu método 'ObtenerMetasIndividualesPorUsuario' ya trae el 'IdDetalleEstado' de Meta_Individual.
-                List<MetaIndividualInfo> todasLasMetasDelUsuario = metaIndDAL.ObtenerMetasIndividualesPorUsuario(usuario);
+                List<MetaIndividualInfo> todasLasMetasDelUsuario = metaIndDAL.ObtenerMetasIndividualesPorUsuario(usuario, ID_ESTADO_ACTIVO_META_IND);
 
                 // 2. Filtrar estas metas para procesar solo aquellas cuyo 'IdDetalleEstado' en 'Meta_Individual' sea 7 ("Activo").
                 List<MetaIndividualInfo> metasActivasParaProcesar = todasLasMetasDelUsuario

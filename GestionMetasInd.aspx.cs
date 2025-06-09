@@ -23,6 +23,7 @@ namespace Gestor_Desempeno
 
         // ID Estado Inactivo para Metas Individuales (Clase 4 - AJUSTAR!)
         private int? ID_ESTADO_INACTIVO_META_IND = null;
+        public int ID_ESTADO_ACTIVO_META_IND = 7;
         private const int ID_CLASE_META_IND = 4; // Clase para estados de Meta Individual
 
         protected void Page_Load(object sender, EventArgs e)
@@ -40,7 +41,7 @@ namespace Gestor_Desempeno
             // Load Inactive State ID once
             if (ID_ESTADO_INACTIVO_META_IND == null)
             {
-                ID_ESTADO_INACTIVO_META_IND = detalleEstadoDAL.ObtenerIdEstadoPorDescripcion("Inactivo", ID_CLASE_META_IND);
+                ID_ESTADO_INACTIVO_META_IND = detalleEstadoDAL.ObtenerIdEstadoPorDescripcion("Cerrado", ID_CLASE_META_IND);
                 if (ID_ESTADO_INACTIVO_META_IND == null)
                 {
                     Console.WriteLine($"CRITICAL ERROR: Could not find 'Inactivo' state ID for Clase {ID_CLASE_META_IND}. Logical delete will fail.");
@@ -121,7 +122,7 @@ namespace Gestor_Desempeno
                 // Si "-- Seleccione Usuario --" tiene valor "0", lo convertimos a null para no filtrar
                 string usuarioFiltro = (usuarioFiltroSeleccionado == "0" || string.IsNullOrEmpty(usuarioFiltroSeleccionado)) ? null : usuarioFiltroSeleccionado;
 
-                List<MetaIndividualInfo> metasInd = metaIndDAL.ObtenerMetasIndividuales(tipoObjFiltro, numMetaFiltro, areaFiltro, usuarioFiltro, UsuariosXJefe());
+                List<MetaIndividualInfo> metasInd = metaIndDAL.ObtenerMetasIndividuales(ID_ESTADO_ACTIVO_META_IND, tipoObjFiltro, numMetaFiltro, areaFiltro, usuarioFiltro, UsuariosXJefe());
                 gvMetasInd.DataSource = metasInd;
                 gvMetasInd.DataBind();
                 litMensaje.Visible = false;
