@@ -17,6 +17,7 @@ namespace Gestor_Desempeno
         private TipoObjetivoDAL tipoObjetivoDAL = new TipoObjetivoDAL();
         private DetalleEstadoDAL detalleEstadoDAL = new DetalleEstadoDAL();
         private UsuarioDAL usuarioDAL_Instance = new UsuarioDAL(); // For security checks
+        private int Id_Detalle_Objetivo_Activo = 1;
 
         public const int id_claseObjetivos = 1;
 
@@ -66,7 +67,7 @@ namespace Gestor_Desempeno
             try
             {
                 int? idTipoFiltro = GetNullableIntFromDDL(ddlTipoObjetivoFiltro);
-                List<ObjetivoInfo> objetivos = objetivoDAL.ObtenerObjetivos(idTipoFiltro);
+                List<ObjetivoInfo> objetivos = objetivoDAL.ObtenerObjetivos(Id_Detalle_Objetivo_Activo,idTipoFiltro);
 
                 gvObjetivos.DataSource = objetivos;
                 gvObjetivos.DataBind();

@@ -36,37 +36,54 @@ namespace Gestor_Desempeno
         }
 
         // **UPDATED:** Método para obtener objetivos con filtro opcional por Tipo de Objetivo
-        public List<ObjetivoInfo> ObtenerObjetivos(int? idTipoObjetivoFiltro = null)
+        public List<ObjetivoInfo> ObtenerObjetivos(int Id_Detalle_Estado, int? idTipoObjetivoFiltro = null)
         {
             List<ObjetivoInfo> lista = new List<ObjetivoInfo>();
-            // Use StringBuilder for easier conditional WHERE clause
-            StringBuilder queryBuilder = new StringBuilder(@"SELECT
+
+            // Query base
+            string baseQuery = @"SELECT
                             o.Id_Objetivo, o.Id_Tipo_Objetivo, o.Id_Periodo, o.Nombre, o.Descripcion,
                             o.Num_Objetivo, o.Id_Detalle_Estado,
                             t.Nombre AS NombreTipoObjetivo,
                             p.Nombre AS NombrePeriodo,
                             d.Descripcion AS DescripcionEstado
-                         FROM dbo.Objetivo o
-                         LEFT JOIN dbo.Tipo_Objetivo t ON o.Id_Tipo_Objetivo = t.Id_Tipo_Objetivo
-                         LEFT JOIN dbo.Periodo p ON o.Id_Periodo = p.Id_Periodo
-                         LEFT JOIN dbo.Detalle_Estado d ON o.Id_Detalle_Estado = d.Id_Detalle_Estado");
+                          FROM dbo.Objetivo o
+                          LEFT JOIN dbo.Tipo_Objetivo t ON o.Id_Tipo_Objetivo = t.Id_Tipo_Objetivo
+                          LEFT JOIN dbo.Periodo p ON o.Id_Periodo = p.Id_Periodo
+                          LEFT JOIN dbo.Detalle_Estado d ON o.Id_Detalle_Estado = d.Id_Detalle_Estado";
 
-            // Add WHERE clause if filter is provided
+            StringBuilder queryBuilder = new StringBuilder(baseQuery);
+            var parameters = new Dictionary<string, object>();
+            var whereClauses = new List<string>();
+
+            // Construcción dinámica y segura de la cláusula WHERE
             if (idTipoObjetivoFiltro.HasValue && idTipoObjetivoFiltro.Value > 0)
             {
-                queryBuilder.Append(" WHERE o.Id_Tipo_Objetivo = @IdTipoObjetivoFiltro");
+                whereClauses.Add("o.Id_Tipo_Objetivo = @IdTipoObjetivoFiltro");
+                parameters["@IdTipoObjetivoFiltro"] = idTipoObjetivoFiltro.Value;
             }
 
-            queryBuilder.Append(" ORDER BY p.Nombre, o.Num_Objetivo, o.Nombre"); // Orden sugerido
+            if (Id_Detalle_Estado > 0)
+            {
+                whereClauses.Add("d.Id_Detalle_Estado = @Id_Detalle_Estado");
+                parameters["@Id_Detalle_Estado"] = Id_Detalle_Estado;
+            }
+
+            if (whereClauses.Any())
+            {
+                queryBuilder.Append(" WHERE ").Append(string.Join(" AND ", whereClauses));
+            }
+
+            queryBuilder.Append(" ORDER BY p.Nombre, o.Num_Objetivo, o.Nombre");
 
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {
                 using (SqlCommand cmd = new SqlCommand(queryBuilder.ToString(), con))
                 {
-                    // Add parameter only if filter is applied
-                    if (idTipoObjetivoFiltro.HasValue && idTipoObjetivoFiltro.Value > 0)
+                    // Añadir todos los parámetros requeridos
+                    foreach (var param in parameters)
                     {
-                        cmd.Parameters.AddWithValue("@IdTipoObjetivoFiltro", idTipoObjetivoFiltro.Value);
+                        cmd.Parameters.AddWithValue(param.Key, param.Value);
                     }
 
                     try
@@ -95,7 +112,7 @@ namespace Gestor_Desempeno
                     catch (Exception ex)
                     {
                         Console.WriteLine("Error en ObtenerObjetivos: " + ex.Message);
-                        throw; // Re-throw exception
+                        throw; // Re-lanzar la excepción para que sea gestionada en un nivel superior
                     }
                 }
             }

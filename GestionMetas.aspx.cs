@@ -15,6 +15,7 @@ namespace Gestor_Desempeno
         private TipoObjetivoDAL tipoObjetivoDAL = new TipoObjetivoDAL();
         private DetalleEstadoDAL detalleEstadoDAL = new DetalleEstadoDAL();
         private UsuarioDAL usuarioDAL_Instance = new UsuarioDAL(); // For security checks
+        private int Id_Detalle_Objetivo_Activo = 1;
 
         // ID Estado Inactivo para Metas (AJUSTAR!)
         private int? ID_ESTADO_INACTIVO_META = null; // Load in Page_Load
@@ -101,7 +102,7 @@ namespace Gestor_Desempeno
         }
         private void LoadObjetivosDropdown(DropDownList ddl, string initialText)
         {
-            if (ddl == null) return; try { ddl.DataSource = objetivoDAL.ObtenerObjetivos(); ddl.DataTextField = "Nombre"; ddl.DataValueField = "Id_Objetivo"; ddl.DataBind(); ddl.Items.Insert(0, new ListItem(initialText, "0")); } catch (Exception ex) { MostrarMensaje($"Error cargando objetivos: {ex.Message}", false); }
+            if (ddl == null) return; try { ddl.DataSource = objetivoDAL.ObtenerObjetivos(Id_Detalle_Objetivo_Activo); ddl.DataTextField = "Nombre"; ddl.DataValueField = "Id_Objetivo"; ddl.DataBind(); ddl.Items.Insert(0, new ListItem(initialText, "0")); } catch (Exception ex) { MostrarMensaje($"Error cargando objetivos: {ex.Message}", false); }
         }
         private void LoadEstadosDropdown(DropDownList ddl, string initialText, int? idClaseFiltro = null)
         {
