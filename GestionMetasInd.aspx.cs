@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.UI;
@@ -192,9 +192,37 @@ namespace Gestor_Desempeno
         {
             if (ddl == null) return; try { ddl.DataSource = tipoObjetivoDAL.ObtenerTiposObjetivo(true); ddl.DataTextField = "Nombre"; ddl.DataValueField = "Id_Tipo_Objetivo"; ddl.DataBind(); ddl.Items.Insert(0, new ListItem(initialText, "0")); } catch (Exception ex) { MostrarMensaje($"Error cargando tipos: {ex.Message}", false); }
         }
-        private void LoadAreasDropdown(DropDownList ddl, string initialText)
+                private void LoadAreasDropdown(DropDownList ddl, string initialText)
         {
-            if (ddl == null) return; try { ddl.DataSource = areaDAL.ObtenerAreas(Session["UsuarioID"].ToString()); ddl.DataTextField = "Nombre"; ddl.DataValueField = "Id_Area_Ejecutora"; ddl.DataBind(); ddl.Items.Insert(0, new ListItem(initialText, "0")); } catch (Exception ex) { MostrarMensaje($"Error cargando áreas: {ex.Message}", false); }
+            if (ddl == null) return;
+            try
+            {
+                var areasData = areaDAL.ObtenerAreas(Session["UsuarioID"].ToString());
+                ddl.DataSource = areasData;
+                ddl.DataTextField = "Nombre";
+                ddl.DataValueField = "Id_Area_Ejecutora";
+                ddl.DataBind();
+
+                // Verificar la cantidad de áreas después de enlazar los datos
+                if (areasData != null && areasData.Count == 1)
+                {
+                    // Si solo hay un área, no se necesita la opción "-- Todas las Áreas --"
+                    // El único elemento ya está seleccionado, así que solo deshabilitamos el control.
+                    ddl.Enabled = false;
+                }
+                else
+                {
+                    // Si hay múltiples áreas o ninguna, agregar la opción inicial y mantener habilitado.
+                    ddl.Items.Insert(0, new ListItem(initialText, "0"));
+                    ddl.Enabled = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                MostrarMensaje($"Error cargando áreas: {ex.Message}", false);
+                ddl.Items.Clear();
+                ddl.Items.Insert(0, new ListItem("-- Error al cargar --", "0"));
+            }
         }
         private void LoadMetasDepDropdown(DropDownList ddl, string initialText)
         {
