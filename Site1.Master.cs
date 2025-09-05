@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -176,6 +176,12 @@ namespace Gestor_Desempeno
                     string idVentanaSecundaria = dt2.Rows[j]["Id_Ventana"].ToString();
                     string urlVentana = dt2.Rows[j]["Url_Ventana"].ToString();
                     string nombreVentanaSecundaria = dt2.Rows[j]["Nombre"].ToString();
+
+                    // Cambiar "Mis Respuestas" por "Reporte Individual"
+                    if (nombreVentanaSecundaria == "Mis Respuestas")
+                    {
+                        nombreVentanaSecundaria = "Reporte Individual";
+                    }
 
                     // Si la URL también puede ser relativa a la aplicación (ej. ~/Paginas/MiPagina.aspx)
                     // entonces también deberías usar ResolveUrl aquí.
