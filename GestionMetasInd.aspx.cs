@@ -229,10 +229,27 @@ namespace Gestor_Desempeno
             int Id_Detalle_Estado = 5;
             if (ddl == null) return; try
             {
-                ddl.DataSource = metaDepDAL.ObtenerMetasDepartamentales(Session["UsuarioID"].ToString(), Id_Detalle_Estado);
+                var metas = metaDepDAL.ObtenerMetasDepartamentales(Session["UsuarioID"].ToString(), Id_Detalle_Estado);
+                ddl.DataSource = metas;
                 ddl.DataTextField = "DisplayTextForDropdown";
                 ddl.DataValueField = "IdMetaDepartamental";
-                ddl.DataBind(); ddl.Items.Insert(0, new ListItem(initialText, "0"));
+                ddl.DataBind(); 
+                
+                // Agregar tooltip con texto completo a cada item
+                foreach (ListItem item in ddl.Items)
+                {
+                    if (item.Value != "0")
+                    {
+                        var meta = metas.FirstOrDefault(m => m.IdMetaDepartamental.ToString() == item.Value);
+                        if (meta != null)
+                        {
+                            string fullText = $"{(meta.NumMetaPadre.HasValue ? meta.NumMetaPadre.Value + ". " : "")} {meta.Descripcion ?? "Sin Desc."}";
+                            item.Attributes["title"] = fullText;
+                        }
+                    }
+                }
+                
+                ddl.Items.Insert(0, new ListItem(initialText, "0"));
             }
             catch (Exception ex) { MostrarMensaje($"Error cargando metas dep.: {ex.Message}", false); }
         }
@@ -457,6 +474,7 @@ namespace Gestor_Desempeno
         private int? GetNullableIntFromTextBox(TextBox txt) { if (txt != null && int.TryParse(txt.Text, out int result)) { return result; } return null; }
         private DateTime? GetNullableDateTimeFromTextBox(TextBox txt) { if (txt != null && DateTime.TryParse(txt.Text, out DateTime result)) { return result; } return null; }
         private void SetSelectedValue(DropDownList ddl, int? value) { if (ddl != null && value.HasValue) { ListItem item = ddl.Items.FindByValue(value.Value.ToString()); if (item != null) { ddl.SelectedValue = value.Value.ToString(); } else { ddl.SelectedIndex = 0; } } else if (ddl != null) { ddl.SelectedIndex = 0; } }
+        private void SetSelectedValueByText(DropDownList ddl, string text) { if (ddl != null && !string.IsNullOrEmpty(text)) { ListItem item = ddl.Items.FindByText(text); if (item != null) { ddl.ClearSelection(); item.Selected = true; } else { ddl.SelectedIndex = 0; } } else if (ddl != null) { ddl.SelectedIndex = 0; } }
         private void LimpiarCamposModal()
         {
             hfMetaIndId.Value = "0";
@@ -470,7 +488,8 @@ namespace Gestor_Desempeno
             txtModalFechaIni.Text = "";
             txtModalFechaFin.Text = "";
             chkModalFinalizable.Checked = false;
-            SafeClearSelection(ddlModalEstado);
+            // Seleccionar "Abierto" por defecto en lugar de limpiar
+            SetSelectedValueByText(ddlModalEstado, "Abierto");
             litModalMensaje.Visible = false;
         }
         private void SafeClearSelection(DropDownList ddl) { if (ddl != null && ddl.Items.Count > 0) { ddl.ClearSelection(); if (ddl.Items[0].Value == "0") { ddl.SelectedIndex = 0; } } }
