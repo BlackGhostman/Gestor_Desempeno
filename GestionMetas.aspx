@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site1.Master" AutoEventWireup="true" CodeBehind="GestionMetas.aspx.cs" Inherits="Gestor_Desempeno.GestionMetas" %>
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site1.Master" AutoEventWireup="true" CodeBehind="GestionMetas.aspx.cs" Inherits="Gestor_Desempeno.GestionMetas" ResponseEncoding="utf-8" %>
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
     <style>
         .gridview-container { margin-top: 20px; }
@@ -65,7 +65,13 @@
                         <%-- Columna Objetivo --%>
                         <asp:BoundField DataField="NombreObjetivo" HeaderText="Nombre Objetivo" SortExpression="NombreObjetivo" ReadOnly="True" />
 
-                        <asp:BoundField DataField="DescripcionObjetivo" HeaderText="Descripción Objetivo" SortExpression="Descripción Objetivo" ReadOnly="True" />
+                                                <asp:TemplateField HeaderText="Descripción Objetivo">
+                            <ItemTemplate>
+                                <div class="descripcion-larga" title='<%# Eval("DescripcionObjetivo") %>'>
+                                    <asp:Label ID="lblDescripcionObjetivoGrid" runat="server" Text='<%# Eval("DescripcionObjetivo") %>'></asp:Label>
+                                </div>
+                            </ItemTemplate>
+                        </asp:TemplateField>
                 
 
                          <%-- Columna Num Meta --%>
