@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -23,6 +23,7 @@ namespace Gestor_Desempeno
         public int? IdTipoObjetivo { get; set; } // Para filtrar por tipo
         public string NombreTipoObjetivo { get; set; }
         public string DescripcionEstado { get; set; }
+        public string DescripcionObjetivo { get; set; } // Nueva propiedad
     }
 
     public class MetaDAL
@@ -45,7 +46,7 @@ namespace Gestor_Desempeno
                 o.Nombre AS NombreObjetivo,
                 o.Id_Tipo_Objetivo,
                 t.Nombre AS NombreTipoObjetivo,
-                d.Descripcion AS DescripcionEstado
+                d.Descripcion AS DescripcionEstado, o.Descripcion as DescripcionObjetivo
             FROM dbo.Meta m
             INNER JOIN dbo.Objetivo o ON m.Id_Objetivo = o.Id_Objetivo
             LEFT JOIN dbo.Tipo_Objetivo t ON o.Id_Tipo_Objetivo = t.Id_Tipo_Objetivo
@@ -112,7 +113,8 @@ namespace Gestor_Desempeno
                                     NombreObjetivo = reader["NombreObjetivo"]?.ToString() ?? "N/A",
                                     IdTipoObjetivo = reader["Id_Tipo_Objetivo"] != DBNull.Value ? Convert.ToInt32(reader["Id_Tipo_Objetivo"]) : (int?)null,
                                     NombreTipoObjetivo = reader["NombreTipoObjetivo"]?.ToString() ?? "N/A",
-                                    DescripcionEstado = reader["DescripcionEstado"]?.ToString() ?? "N/A"
+                                    DescripcionEstado = reader["DescripcionEstado"]?.ToString() ?? "N/A",
+                                    DescripcionObjetivo = reader["DescripcionObjetivo"]?.ToString() ?? "N/A"
                                 });
                             }
                         }
@@ -292,7 +294,8 @@ namespace Gestor_Desempeno
                                     NombreObjetivo = reader["NombreObjetivo"]?.ToString() ?? "N/A",
                                     IdTipoObjetivo = reader["Id_Tipo_Objetivo"] != DBNull.Value ? Convert.ToInt32(reader["Id_Tipo_Objetivo"]) : (int?)null,
                                     NombreTipoObjetivo = reader["NombreTipoObjetivo"]?.ToString() ?? "N/A",
-                                    DescripcionEstado = reader["DescripcionEstado"]?.ToString() ?? "N/A"
+                                    DescripcionEstado = reader["DescripcionEstado"]?.ToString() ?? "N/A",
+                                    DescripcionObjetivo = reader["DescripcionObjetivo"]?.ToString() ?? "N/A"
                                 };
                             }
                         }

@@ -63,13 +63,16 @@
                     OnRowCommand="gvMetas_RowCommand"> <%-- Keep RowCommand --%>
                     <Columns>
                         <%-- Columna Objetivo --%>
-                        <asp:BoundField DataField="NombreObjetivo" HeaderText="Objetivo Asociado" SortExpression="NombreObjetivo" ReadOnly="True" />
+                        <asp:BoundField DataField="NombreObjetivo" HeaderText="Nombre Objetivo" SortExpression="NombreObjetivo" ReadOnly="True" />
+
+                        <asp:BoundField DataField="DescripcionObjetivo" HeaderText="Descripción Objetivo" SortExpression="Descripción Objetivo" ReadOnly="True" />
+                
 
                          <%-- Columna Num Meta --%>
                         <asp:BoundField DataField="NumMeta" HeaderText="Num." SortExpression="NumMeta" ReadOnly="True" ItemStyle-HorizontalAlign="Center" HeaderStyle-HorizontalAlign="Center"/>
 
                         <%-- Columna Descripción Meta --%>
-                        <asp:TemplateField HeaderText="Descripción Meta">
+                        <asp:TemplateField HeaderText="Meta">
                             <ItemTemplate>
                                  <div class="descripcion-larga" title='<%# Eval("Descripcion") %>'>
                                      <asp:Label ID="lblDescripcionGrid" runat="server" Text='<%# Eval("Descripcion") %>'></asp:Label>
