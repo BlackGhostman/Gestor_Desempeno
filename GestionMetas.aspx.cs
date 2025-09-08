@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -146,6 +146,7 @@ namespace Gestor_Desempeno
 
             if (e.CommandName == "EditarMeta") { CargarDatosModalParaEditar(metaId); }
             else if (e.CommandName == "EliminarMeta") { EliminarMeta(metaId); }
+            else if (e.CommandName == "VerFicha") { CargarFichaTecnicaModal(metaId); }
         }
 
         // Botón "Agregar Nueva Meta"
@@ -177,6 +178,7 @@ namespace Gestor_Desempeno
 
                     txtModalNumMeta.Text = meta.NumMeta?.ToString() ?? string.Empty;
                     txtModalDescripcion.Text = meta.Descripcion;
+                    txtModalFichaTecnica.Text = meta.FichaTecnica;
 
                     ScriptManager.RegisterStartupScript(this, this.GetType(), "ShowMetaModalScript", "showModal('metaModal');", true);
                 }
@@ -202,6 +204,7 @@ namespace Gestor_Desempeno
                 int? idObjetivo = GetNullableIntFromDDL(ddlModalObjetivo);
                 int? numMeta = GetNullableIntFromTextBox(txtModalNumMeta);
                 string descripcion = txtModalDescripcion.Text.Trim();
+                string fichaTecnica = txtModalFichaTecnica.Text.Trim();
                 int? idEstado = GetNullableIntFromDDL(ddlModalEstado);
 
                 bool success = false; string actionMessage = "";
@@ -213,12 +216,12 @@ namespace Gestor_Desempeno
 
                 if (metaId > 0)
                 { // Editar
-                    success = metaDAL.ActualizarMeta(metaId, idObjetivo, numMeta, descripcion, idEstado);
+                    success = metaDAL.ActualizarMeta(metaId, idObjetivo, numMeta, descripcion, idEstado, fichaTecnica);
                     actionMessage = success ? "Meta actualizada." : "Error al actualizar.";
                 }
                 else
                 { // Agregar
-                    int nuevoId = metaDAL.InsertarMeta(idObjetivo, numMeta, descripcion, idEstado);
+                    int nuevoId = metaDAL.InsertarMeta(idObjetivo, numMeta, descripcion, idEstado, fichaTecnica);
                     success = (nuevoId > 0);
                     actionMessage = success ? "Meta agregada." : "Error al agregar.";
                 }
@@ -267,8 +270,31 @@ namespace Gestor_Desempeno
             ddlModalObjetivo.SelectedIndex = 0;
             txtModalNumMeta.Text = "";
             txtModalDescripcion.Text = "";
+            txtModalFichaTecnica.Text = "";
             ddlModalEstado.SelectedIndex = 0;
             litModalMensaje.Visible = false;
+        }
+
+        private void CargarFichaTecnicaModal(int metaId)
+        {
+            try
+            {
+                MetaInfo meta = metaDAL.ObtenerMetaPorId(metaId);
+                if (meta != null && !string.IsNullOrEmpty(meta.FichaTecnica))
+                {
+                    litFichaTecnicaContenido.Text = Server.HtmlEncode(meta.FichaTecnica).Replace("\n", "<br />");
+                }
+                else
+                {
+                    litFichaTecnicaContenido.Text = "<p>No hay ficha técnica disponible para esta meta.</p>";
+                }
+                ScriptManager.RegisterStartupScript(this, this.GetType(), "ShowFichaModalScript", "showModal('fichaModal');", true);
+            }
+            catch (Exception ex)
+            {
+                MostrarMensaje($"Error al cargar la ficha técnica: {ex.Message}", false);
+                Console.WriteLine($"Error CargarFichaTecnicaModal: {ex}");
+            }
         }
 
     } // End Class

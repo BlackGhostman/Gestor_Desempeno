@@ -89,6 +89,13 @@
                          <%-- Columna Estado --%>
                          <asp:BoundField DataField="DescripcionEstado" HeaderText="Estado" SortExpression="DescripcionEstado" ReadOnly="True" />
 
+                        <%-- Columna Ficha Técnica --%>
+                        <asp:TemplateField HeaderText="Ficha">
+                            <ItemTemplate>
+                                <asp:Button ID="btnVerFicha" runat="server" CommandName="VerFicha" CommandArgument='<%# Eval("IdMeta") %>' Text="Ver" CssClass="btn btn-sm btn-info gridview-button" CausesValidation="false" />
+                            </ItemTemplate>
+                        </asp:TemplateField>
+
                         <%-- ** UPDATED: Actions Column ** --%>
                         <asp:TemplateField HeaderText="Acciones">
                             <ItemTemplate>
@@ -137,6 +144,10 @@
                                              <asp:TextBox ID="txtModalDescripcion" runat="server" CssClass="form-control" TextMode="MultiLine" Rows="3"></asp:TextBox>
                                               <%-- No es requerido usualmente --%>
                                          </div>
+                                         <div class="col-12">
+                                             <label for="txtModalFichaTecnica" class="form-label">Ficha Técnica:</label>
+                                             <asp:TextBox ID="txtModalFichaTecnica" runat="server" CssClass="form-control" TextMode="MultiLine" Rows="5"></asp:TextBox>
+                                         </div>
                                           <div class="col-md-6">
                                              <label for="ddlModalEstado" class="form-label">Estado:</label>
                                              <asp:DropDownList ID="ddlModalEstado" runat="server" CssClass="form-select" DataValueField="Id_Detalle_Estado" DataTextField="Descripcion"></asp:DropDownList>
@@ -152,6 +163,24 @@
                     </div>
                 </div>
             </div> <%-- End Modal --%>
+
+            <%-- Modal para ver Ficha Técnica --%>
+            <div class="modal fade" id="fichaModal" tabindex="-1" aria-labelledby="fichaModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="fichaModalLabel">Ficha Técnica</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <asp:Literal ID="litFichaTecnicaContenido" runat="server"></asp:Literal>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         </ContentTemplate>
          <%-- Triggers for the main UpdatePanel --%>

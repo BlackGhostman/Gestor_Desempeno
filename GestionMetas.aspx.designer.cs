@@ -1,4 +1,4 @@
-﻿//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // <generado automáticamente>
 //     Este código fue generado por una herramienta.
 //
@@ -177,6 +177,15 @@ namespace Gestor_Desempeno
         protected global::System.Web.UI.WebControls.TextBox txtModalDescripcion;
 
         /// <summary>
+        /// Control txtModalFichaTecnica.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox txtModalFichaTecnica;
+
+        /// <summary>
         /// Control ddlModalEstado.
         /// </summary>
         /// <remarks>
@@ -202,5 +211,14 @@ namespace Gestor_Desempeno
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btnGuardarModal;
+
+        /// <summary>
+        /// Control litFichaTecnicaContenido.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal litFichaTecnicaContenido;
     }
 }

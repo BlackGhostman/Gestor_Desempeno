@@ -24,6 +24,7 @@ namespace Gestor_Desempeno
         public string NombreTipoObjetivo { get; set; }
         public string DescripcionEstado { get; set; }
         public string DescripcionObjetivo { get; set; } // Nueva propiedad
+        public string FichaTecnica { get; set; }
     }
 
     public class MetaDAL
@@ -42,7 +43,7 @@ namespace Gestor_Desempeno
             // Construir la consulta base con JOINs
             StringBuilder queryBuilder = new StringBuilder(@"
             SELECT
-                m.Id_Meta, m.Id_Objetivo, m.Num_Meta, m.Descripcion AS DescripcionMeta, m.Id_Detalle_Estado,
+                m.Id_Meta, m.Id_Objetivo, m.Num_Meta, m.Descripcion AS DescripcionMeta, m.Id_Detalle_Estado, m.Ficha_Tecnica,
                 o.Nombre AS NombreObjetivo,
                 o.Id_Tipo_Objetivo,
                 t.Nombre AS NombreTipoObjetivo,
@@ -114,7 +115,8 @@ namespace Gestor_Desempeno
                                     IdTipoObjetivo = reader["Id_Tipo_Objetivo"] != DBNull.Value ? Convert.ToInt32(reader["Id_Tipo_Objetivo"]) : (int?)null,
                                     NombreTipoObjetivo = reader["NombreTipoObjetivo"]?.ToString() ?? "N/A",
                                     DescripcionEstado = reader["DescripcionEstado"]?.ToString() ?? "N/A",
-                                    DescripcionObjetivo = reader["DescripcionObjetivo"]?.ToString() ?? "N/A"
+                                    DescripcionObjetivo = reader["DescripcionObjetivo"]?.ToString() ?? "N/A",
+                                    FichaTecnica = reader["Ficha_Tecnica"]?.ToString() ?? string.Empty
                                 });
                             }
                         }
@@ -130,7 +132,7 @@ namespace Gestor_Desempeno
         }
 
         // Método para insertar una nueva meta
-        public int InsertarMeta(int? idObjetivo, int? numMeta, string descripcion, int? Id_Detalle_Estado)
+        public int InsertarMeta(int? idObjetivo, int? numMeta, string descripcion, int? Id_Detalle_Estado, string fichaTecnica)
         {
             int nuevoId = -1;
             // Validaciones básicas
@@ -140,8 +142,8 @@ namespace Gestor_Desempeno
                 return -1;
             }
 
-            string query = @"INSERT INTO dbo.Meta (Id_Objetivo, Num_Meta, Descripcion, Id_Detalle_Estado)
-                         VALUES (@IdObjetivo, @NumMeta, @Descripcion, @Id_Detalle_Estado);
+            string query = @"INSERT INTO dbo.Meta (Id_Objetivo, Num_Meta, Descripcion, Id_Detalle_Estado, Ficha_Tecnica)
+                         VALUES (@IdObjetivo, @NumMeta, @Descripcion, @Id_Detalle_Estado, @FichaTecnica);
                          SELECT SCOPE_IDENTITY();";
 
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
@@ -152,6 +154,7 @@ namespace Gestor_Desempeno
                     cmd.Parameters.AddWithValue("@NumMeta", numMeta.HasValue ? (object)numMeta.Value : DBNull.Value);
                     cmd.Parameters.AddWithValue("@Descripcion", string.IsNullOrWhiteSpace(descripcion) ? DBNull.Value : (object)descripcion);
                     cmd.Parameters.AddWithValue("@Id_Detalle_Estado", Id_Detalle_Estado.Value);
+                    cmd.Parameters.AddWithValue("@FichaTecnica", string.IsNullOrWhiteSpace(fichaTecnica) ? DBNull.Value : (object)fichaTecnica);
 
                     try
                     {
@@ -173,7 +176,7 @@ namespace Gestor_Desempeno
         }
 
         // Método para actualizar una meta existente
-        public bool ActualizarMeta(int idMeta, int? idObjetivo, int? numMeta, string descripcion, int? Id_Detalle_Estado)
+        public bool ActualizarMeta(int idMeta, int? idObjetivo, int? numMeta, string descripcion, int? Id_Detalle_Estado, string fichaTecnica)
         {
             bool actualizado = false;
             // Validaciones básicas
@@ -187,7 +190,8 @@ namespace Gestor_Desempeno
                             Id_Objetivo = @IdObjetivo,
                             Num_Meta = @NumMeta,
                             Descripcion = @Descripcion,
-                            Id_Detalle_Estado = @Id_Detalle_Estado
+                            Id_Detalle_Estado = @Id_Detalle_Estado,
+                            Ficha_Tecnica = @FichaTecnica
                          WHERE Id_Meta = @IdMeta";
 
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
@@ -199,6 +203,7 @@ namespace Gestor_Desempeno
                     cmd.Parameters.AddWithValue("@NumMeta", numMeta.HasValue ? (object)numMeta.Value : DBNull.Value);
                     cmd.Parameters.AddWithValue("@Descripcion", string.IsNullOrWhiteSpace(descripcion) ? DBNull.Value : (object)descripcion);
                     cmd.Parameters.AddWithValue("@Id_Detalle_Estado", Id_Detalle_Estado.Value);
+                    cmd.Parameters.AddWithValue("@FichaTecnica", string.IsNullOrWhiteSpace(fichaTecnica) ? DBNull.Value : (object)fichaTecnica);
 
                     try
                     {
@@ -261,11 +266,11 @@ namespace Gestor_Desempeno
         {
             MetaInfo meta = null;
             string query = @"SELECT
-                            m.Id_Meta, m.Id_Objetivo, m.Num_Meta, m.Descripcion AS DescripcionMeta, m.Id_Detalle_Estado,
+                            m.Id_Meta, m.Id_Objetivo, m.Num_Meta, m.Descripcion AS DescripcionMeta, m.Id_Detalle_Estado, m.Ficha_Tecnica,
                             o.Nombre AS NombreObjetivo,
                             o.Id_Tipo_Objetivo,
                             t.Nombre AS NombreTipoObjetivo,
-                            d.Descripcion AS DescripcionEstado
+                            d.Descripcion AS DescripcionEstado, o.Descripcion as DescripcionObjetivo
                          FROM dbo.Meta m
                          INNER JOIN dbo.Objetivo o ON m.Id_Objetivo = o.Id_Objetivo
                          LEFT JOIN dbo.Tipo_Objetivo t ON o.Id_Tipo_Objetivo = t.Id_Tipo_Objetivo
@@ -295,7 +300,8 @@ namespace Gestor_Desempeno
                                     IdTipoObjetivo = reader["Id_Tipo_Objetivo"] != DBNull.Value ? Convert.ToInt32(reader["Id_Tipo_Objetivo"]) : (int?)null,
                                     NombreTipoObjetivo = reader["NombreTipoObjetivo"]?.ToString() ?? "N/A",
                                     DescripcionEstado = reader["DescripcionEstado"]?.ToString() ?? "N/A",
-                                    DescripcionObjetivo = reader["DescripcionObjetivo"]?.ToString() ?? "N/A"
+                                    DescripcionObjetivo = reader["DescripcionObjetivo"]?.ToString() ?? "N/A",
+                                    FichaTecnica = reader["Ficha_Tecnica"]?.ToString() ?? string.Empty
                                 };
                             }
                         }
