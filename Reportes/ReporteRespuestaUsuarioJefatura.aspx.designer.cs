@@ -11,17 +11,16 @@ namespace Gestor_Desempeno.Reportes
 {
 
 
-    public partial class ReporteRespuestaUsuario
+    public partial class ReporteRespuestaUsuarioJefatura
     {
 
         /// <summary>
-        /// Control rpt_Respuesta.
+        /// Control rpt_Respuesta_Jefatura.
         /// </summary>
         /// <remarks>
         /// Campo generado automáticamente.
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
-        protected global::Microsoft.Reporting.WebForms.ReportViewer rpt_Respuesta;
-        
+        protected global::Microsoft.Reporting.WebForms.ReportViewer rpt_Respuesta_Jefatura;
     }
 }

@@ -96,6 +96,7 @@
     <None Include="Scripts\jquery-3.7.1.intellisense.js" />
     <Content Include="MetasRapidas.aspx" />
     <Content Include="Reportes\ReporteRespuestaUsuario.aspx" />
+    <Content Include="Reportes\ReporteRespuestaUsuarioJefatura.aspx" />
     <Content Include="RevisionMetasSubordinados.aspx" />
     <Content Include="Scripts\jquery-3.7.1.js" />
     <Content Include="Scripts\jquery-3.7.1.min.js" />
@@ -274,6 +275,13 @@
     </Compile>
     <Compile Include="Reportes\ReporteRespuestaUsuario.aspx.designer.cs">
       <DependentUpon>ReporteRespuestaUsuario.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Reportes\ReporteRespuestaUsuarioJefatura.aspx.cs">
+      <DependentUpon>ReporteRespuestaUsuarioJefatura.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Reportes\ReporteRespuestaUsuarioJefatura.aspx.designer.cs">
+      <DependentUpon>ReporteRespuestaUsuarioJefatura.aspx</DependentUpon>
     </Compile>
     <Compile Include="RespuestaDAL.cs" />
     <Compile Include="RevisionMetasSubordinados.aspx.cs">
