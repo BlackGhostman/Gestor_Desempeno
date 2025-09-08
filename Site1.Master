@@ -1,4 +1,4 @@
-﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site1.master.cs" Inherits="Gestor_Desempeno.Site1" %>
+<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site1.master.cs" Inherits="Gestor_Desempeno.Site1" %>
 
 <!DOCTYPE html>
 <html lang="es">
@@ -124,6 +124,47 @@
                 background-color: rgba(255, 255, 255, 0.1);
                 color: white !important;
             }
+
+        /* Custom pagination styles */
+        .pagination-ys {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .pagination-ys table {
+            margin: 0 auto;
+        }
+        
+        .pagination-ys td {
+            padding: 0 !important;
+        }
+        
+        .pagination-ys a, .pagination-ys span {
+            display: inline-block;
+            padding: 8px 12px;
+            margin: 0 2px;
+            text-decoration: none;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            color: #007bff;
+            background-color: #fff;
+            transition: all 0.2s ease;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .pagination-ys a:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd;
+            color: #0056b3;
+        }
+        
+        .pagination-ys span {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: #fff;
+            font-weight: bold;
+        }
     </style>
     <asp:ContentPlaceHolder ID="HeadContent" runat="server"></asp:ContentPlaceHolder>
 </head>
