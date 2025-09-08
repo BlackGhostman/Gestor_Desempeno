@@ -122,7 +122,7 @@
                     ErrorMessage="El nombre es requerido." Display="Dynamic" CssClass="text-danger small" ValidationGroup="NewValidation">*</asp:RequiredFieldValidator>
             </div>
             <div class="col-md-6">
-                <label for="<%=txtNuevaDescripcion.ClientID %>" class="form-label">Descripción:</label>
+                <label for="<%=txtNuevaDescripcion.ClientID %>" class="form-label">Alcance:</label>
                 <asp:TextBox ID="txtNuevaDescripcion" runat="server" CssClass="form-control" MaxLength="100"></asp:TextBox>
             </div>
              <div class="col-md-4">

@@ -369,7 +369,6 @@ namespace Gestor_Desempeno
                     }
 
                     txtModalDescMetaInd.Text = metaInd.Descripcion;
-                    txtModalAlcance.Text = metaInd.Alcance;
                     txtModalPesoN4.Text = metaInd.PesoPonderadoN4?.ToString() ?? string.Empty;
                     txtModalPesoN5.Text = metaInd.PesoPonderadoN5?.ToString() ?? string.Empty;
                     txtModalFechaIni.Text = metaInd.FechaInicial?.ToString("yyyy-MM-dd") ?? string.Empty;
@@ -402,7 +401,6 @@ namespace Gestor_Desempeno
                 // CAMBIO: Leer del DropDownList
                 string usuario = ddlModalUsuario.SelectedValue;
                 string desc = txtModalDescMetaInd.Text.Trim();
-                string alcance = txtModalAlcance.Text.Trim();
                 int? pesoN4 = GetNullableIntFromTextBox(txtModalPesoN4);
                 int? pesoN5 = GetNullableIntFromTextBox(txtModalPesoN5);
                 DateTime? fechaIni = GetNullableDateTimeFromTextBox(txtModalFechaIni);
@@ -420,12 +418,12 @@ namespace Gestor_Desempeno
 
                 if (metaIndId > 0)
                 { // Editar
-                    success = metaIndDAL.ActualizarMetaIndividual(metaIndId, idMetaDep, usuario, desc, alcance, pesoN4, pesoN5, fechaIni, fechaFin, esFinalizable, idEstado);
+                    success = metaIndDAL.ActualizarMetaIndividual(metaIndId, idMetaDep, usuario, desc, pesoN4, pesoN5, fechaIni, fechaFin, esFinalizable, idEstado);
                     actionMessage = success ? "Meta Individual actualizada." : "Error al actualizar.";
                 }
                 else
                 { // Agregar
-                    int nuevoId = metaIndDAL.InsertarMetaIndividual(idMetaDep, usuario, desc, alcance, pesoN4, pesoN5, fechaIni, fechaFin, false, idEstado);
+                    int nuevoId = metaIndDAL.InsertarMetaIndividual(idMetaDep, usuario, desc, pesoN4, pesoN5, fechaIni, fechaFin, false, idEstado);
                     success = (nuevoId > 0);
                     actionMessage = success ? "Meta Individual agregada." : "Error al agregar.";
                 }
@@ -482,7 +480,6 @@ namespace Gestor_Desempeno
             // txtModalUsuario.Text = ""; // YA NO SE USA EL TEXTBOX
             SafeClearSelection(ddlModalUsuario); // <-- AÑADIR ESTA LÍNEA para resetear el nuevo DDL
             txtModalDescMetaInd.Text = "";
-            txtModalAlcance.Text = "";
             txtModalPesoN4.Text = "";
             txtModalPesoN5.Text = "";
             txtModalFechaIni.Text = "";

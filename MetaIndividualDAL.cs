@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -17,7 +17,6 @@ namespace Gestor_Desempeno
         public int? IdMetaDepartamental { get; set; }
         public string Usuario { get; set; }
         public string Descripcion { get; set; }
-        public string Alcance { get; set; }
         public int? PesoPonderadoN4 { get; set; }
         public int? PesoPonderadoN5 { get; set; }
         public DateTime? FechaInicial { get; set; }
@@ -35,7 +34,6 @@ namespace Gestor_Desempeno
         public int? IdTipoObjetivo { get; set; } // Para filtro
         public int? NumObjetivoPadre { get; set; } // Num_Objetivo from Objetivo table
         public string NombreObjetivoPadre { get; set; } // Nombre from Objetivo table
-        
 
         // Property for combined display text (Lista 2)
         public string DisplayTextLista2
@@ -79,7 +77,6 @@ namespace Gestor_Desempeno
             this.UltimoComentarioJefe = null; // Inicializar como null
         }
     }
-
 
     public class MetaIndividualDAL
     {
@@ -163,7 +160,7 @@ namespace Gestor_Desempeno
 
             string query = $@"
             SELECT
-                mi.Id_Meta_Individual, mi.Id_Meta_Departamental, mi.Usuario, mi.Descripcion, mi.Alcance,
+                mi.Id_Meta_Individual, mi.Id_Meta_Departamental, mi.Usuario, mi.Descripcion,
                 mi.Peso_Ponderado_N4, mi.Peso_Ponderado_N5, mi.Fecha_Inicial, mi.Fecha_Final,
                 mi.Es_Finalizable, mi.Id_Detalle_Estado,
                 md.Descripcion AS DescripcionMetaDepartamental,
@@ -205,7 +202,6 @@ namespace Gestor_Desempeno
                                     IdMetaDepartamental = reader["Id_Meta_Departamental"] != DBNull.Value ? Convert.ToInt32(reader["Id_Meta_Departamental"]) : (int?)null,
                                     Usuario = reader["Usuario"]?.ToString() ?? string.Empty,
                                     Descripcion = reader["Descripcion"]?.ToString() ?? string.Empty,
-                                    Alcance = reader["Alcance"]?.ToString() ?? string.Empty,
                                     PesoPonderadoN4 = reader["Peso_Ponderado_N4"] != DBNull.Value ? Convert.ToInt32(reader["Peso_Ponderado_N4"]) : (int?)null,
                                     PesoPonderadoN5 = reader["Peso_Ponderado_N5"] != DBNull.Value ? Convert.ToInt32(reader["Peso_Ponderado_N5"]) : (int?)null,
                                     FechaInicial = reader["Fecha_Inicial"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha_Inicial"]) : (DateTime?)null,
@@ -333,7 +329,7 @@ namespace Gestor_Desempeno
         // Método para obtener Metas Individuales con filtros
 
 
-        public List<MetaIndividualInfo> ObtenerMetasIndividuales( int Id_Detalle_Estado,
+        public List<MetaIndividualInfo> ObtenerMetasIndividuales(int Id_Detalle_Estado,
         int? idTipoObjetivoFiltro = null,
         int? numMetaFiltro = null,
         int? idAreaEjecutoraFiltro = null,
@@ -345,7 +341,7 @@ namespace Gestor_Desempeno
 
             StringBuilder queryBuilder = new StringBuilder(@"
             SELECT
-                mi.Id_Meta_Individual, mi.Id_Meta_Departamental, mi.Usuario, mi.Descripcion, mi.Alcance,
+                mi.Id_Meta_Individual, mi.Id_Meta_Departamental, mi.Usuario, mi.Descripcion,
                 mi.Peso_Ponderado_N4, mi.Peso_Ponderado_N5, mi.Fecha_Inicial, mi.Fecha_Final,
                 mi.Es_Finalizable, mi.Id_Detalle_Estado,
                 md.Descripcion AS DescripcionMetaDepartamental,
@@ -449,7 +445,6 @@ namespace Gestor_Desempeno
                                     IdMetaDepartamental = reader["Id_Meta_Departamental"] != DBNull.Value ? Convert.ToInt32(reader["Id_Meta_Departamental"]) : (int?)null,
                                     Usuario = reader["Usuario"]?.ToString() ?? string.Empty,
                                     Descripcion = reader["Descripcion"]?.ToString() ?? string.Empty,
-                                    Alcance = reader["Alcance"]?.ToString() ?? string.Empty,
                                     PesoPonderadoN4 = reader["Peso_Ponderado_N4"] != DBNull.Value ? Convert.ToInt32(reader["Peso_Ponderado_N4"]) : (int?)null,
                                     PesoPonderadoN5 = reader["Peso_Ponderado_N5"] != DBNull.Value ? Convert.ToInt32(reader["Peso_Ponderado_N5"]) : (int?)null,
                                     FechaInicial = reader["Fecha_Inicial"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha_Inicial"]) : (DateTime?)null,
@@ -519,13 +514,13 @@ namespace Gestor_Desempeno
 
 
         // Método para insertar una nueva meta individual
-        public int InsertarMetaIndividual(int? idMetaDepartamental, string usuario, string descripcion, string alcance, int? pesoN4, int? pesoN5, DateTime? fechaInicial, DateTime? fechaFinal, bool? esFinalizable, int? idDetalleEstado)
+        public int InsertarMetaIndividual(int? idMetaDepartamental, string usuario, string descripcion, int? pesoN4, int? pesoN5, DateTime? fechaInicial, DateTime? fechaFinal, bool? esFinalizable, int? idDetalleEstado)
         {
             int nuevoId = -1;
             if (!idMetaDepartamental.HasValue || idMetaDepartamental.Value <= 0 || string.IsNullOrWhiteSpace(usuario) || !idDetalleEstado.HasValue || idDetalleEstado.Value <= 0) { return -1; }
             DateTime fechaInicialReal = fechaInicial ?? DateTime.Today;
             DateTime? fechaFinalReal = (esFinalizable == true && !fechaFinal.HasValue) ? (DateTime?)null : fechaFinal;
-            string query = @"INSERT INTO dbo.Meta_Individual (Id_Meta_Departamental, Usuario, Descripcion, Alcance, Peso_Ponderado_N4, Peso_Ponderado_N5, Fecha_Inicial, Fecha_Final, Es_Finalizable, Id_Detalle_Estado) VALUES (@IdMetaDepartamental, @Usuario, @Descripcion, @Alcance, @PesoN4, @PesoN5, @FechaInicial, @FechaFinal, @EsFinalizable, @IdDetalleEstado); SELECT SCOPE_IDENTITY();";
+            string query = @"INSERT INTO dbo.Meta_Individual (Id_Meta_Departamental, Usuario, Descripcion, Peso_Ponderado_N4, Peso_Ponderado_N5, Fecha_Inicial, Fecha_Final, Es_Finalizable, Id_Detalle_Estado) VALUES (@IdMetaDepartamental, @Usuario, @Descripcion, @PesoN4, @PesoN5, @FechaInicial, @FechaFinal, @EsFinalizable, @IdDetalleEstado); SELECT SCOPE_IDENTITY();";
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {
                 using (SqlCommand cmd = new SqlCommand(query, con))
@@ -533,7 +528,6 @@ namespace Gestor_Desempeno
                     cmd.Parameters.AddWithValue("@IdMetaDepartamental", idMetaDepartamental.Value);
                     cmd.Parameters.AddWithValue("@Usuario", usuario.Trim());
                     cmd.Parameters.AddWithValue("@Descripcion", string.IsNullOrWhiteSpace(descripcion) ? DBNull.Value : (object)descripcion);
-                    cmd.Parameters.AddWithValue("@Alcance", string.IsNullOrWhiteSpace(alcance) ? DBNull.Value : (object)alcance);
                     cmd.Parameters.AddWithValue("@PesoN4", pesoN4.HasValue ? (object)pesoN4.Value : DBNull.Value);
                     cmd.Parameters.AddWithValue("@PesoN5", pesoN5.HasValue ? (object)pesoN5.Value : DBNull.Value);
                     cmd.Parameters.AddWithValue("@FechaInicial", fechaInicialReal);
@@ -548,13 +542,13 @@ namespace Gestor_Desempeno
         }
 
         // Método para actualizar una meta individual existente
-        public bool ActualizarMetaIndividual(int idMetaIndividual, int? idMetaDepartamental, string usuario, string descripcion, string alcance, int? pesoN4, int? pesoN5, DateTime? fechaInicial, DateTime? fechaFinal, bool? esFinalizable, int? idDetalleEstado)
+        public bool ActualizarMetaIndividual(int idMetaIndividual, int? idMetaDepartamental, string usuario, string descripcion, int? pesoN4, int? pesoN5, DateTime? fechaInicial, DateTime? fechaFinal, bool? esFinalizable, int? idDetalleEstado)
         {
             bool actualizado = false;
             if (idMetaIndividual <= 0 || !idMetaDepartamental.HasValue || idMetaDepartamental.Value <= 0 || string.IsNullOrWhiteSpace(usuario) || !idDetalleEstado.HasValue || idDetalleEstado.Value <= 0) { return false; }
             DateTime fechaInicialReal = fechaInicial ?? DateTime.Today;
             DateTime? fechaFinalReal = (esFinalizable == true && !fechaFinal.HasValue) ? (DateTime?)null : fechaFinal;
-            string query = @"UPDATE dbo.Meta_Individual SET Id_Meta_Departamental = @IdMetaDepartamental, Usuario = @Usuario, Descripcion = @Descripcion, Alcance = @Alcance, Peso_Ponderado_N4 = @PesoN4, Peso_Ponderado_N5 = @PesoN5, Fecha_Inicial = @FechaInicial, Fecha_Final = @FechaFinal, Es_Finalizable = @EsFinalizable, Id_Detalle_Estado = @IdDetalleEstado WHERE Id_Meta_Individual = @IdMetaIndividual";
+            string query = @"UPDATE dbo.Meta_Individual SET Id_Meta_Departamental = @IdMetaDepartamental, Usuario = @Usuario, Descripcion = @Descripcion, Peso_Ponderado_N4 = @PesoN4, Peso_Ponderado_N5 = @PesoN5, Fecha_Inicial = @FechaInicial, Fecha_Final = @FechaFinal, Es_Finalizable = @EsFinalizable, Id_Detalle_Estado = @IdDetalleEstado WHERE Id_Meta_Individual = @IdMetaIndividual";
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {
                 using (SqlCommand cmd = new SqlCommand(query, con))
@@ -563,7 +557,6 @@ namespace Gestor_Desempeno
                     cmd.Parameters.AddWithValue("@IdMetaDepartamental", idMetaDepartamental.Value);
                     cmd.Parameters.AddWithValue("@Usuario", usuario.Trim());
                     cmd.Parameters.AddWithValue("@Descripcion", string.IsNullOrWhiteSpace(descripcion) ? DBNull.Value : (object)descripcion);
-                    cmd.Parameters.AddWithValue("@Alcance", string.IsNullOrWhiteSpace(alcance) ? DBNull.Value : (object)alcance);
                     cmd.Parameters.AddWithValue("@PesoN4", pesoN4.HasValue ? (object)pesoN4.Value : DBNull.Value);
                     cmd.Parameters.AddWithValue("@PesoN5", pesoN5.HasValue ? (object)pesoN5.Value : DBNull.Value);
                     cmd.Parameters.AddWithValue("@FechaInicial", fechaInicialReal);
@@ -601,13 +594,13 @@ namespace Gestor_Desempeno
         public MetaIndividualInfo ObtenerMetaIndividualPorId(int idMetaIndividual)
         {
             MetaIndividualInfo metaInd = null;
-            string query = @"SELECT mi.Id_Meta_Individual, mi.Id_Meta_Departamental, mi.Usuario, mi.Descripcion AS DescripcionIndividual, mi.Alcance, mi.Peso_Ponderado_N4, mi.Peso_Ponderado_N5, mi.Fecha_Inicial, mi.Fecha_Final, mi.Es_Finalizable, mi.Id_Detalle_Estado, md.Descripcion AS DescripcionMetaDepartamental, ae.Id_Area_Ejecutora, ae.Nombre AS NombreAreaEjecutora, m.Num_Meta AS NumMetaPadre, o.Num_Objetivo AS NumObjetivoPadre, o.Nombre AS NombreObjetivoPadre, t.Id_Tipo_Objetivo, t.Nombre AS NombreTipoObjetivo, de.Descripcion AS DescripcionEstado FROM dbo.Meta_Individual mi INNER JOIN dbo.Meta_Departamental md ON mi.Id_Meta_Departamental = md.Id_Meta_Departamental INNER JOIN dbo.Meta m ON md.Id_Meta = m.Id_Meta INNER JOIN dbo.Objetivo o ON m.Id_Objetivo = o.Id_Objetivo LEFT JOIN dbo.Tipo_Objetivo t ON o.Id_Tipo_Objetivo = t.Id_Tipo_Objetivo LEFT JOIN dbo.Area_Ejecutora ae ON md.Id_Area_Ejecutora = ae.Id_Area_Ejecutora LEFT JOIN dbo.Detalle_Estado de ON mi.Id_Detalle_Estado = de.Id_Detalle_Estado WHERE mi.Id_Meta_Individual = @IdMetaIndividual";
+            string query = @"SELECT mi.Id_Meta_Individual, mi.Id_Meta_Departamental, mi.Usuario, mi.Descripcion AS DescripcionIndividual, mi.Peso_Ponderado_N4, mi.Peso_Ponderado_N5, mi.Fecha_Inicial, mi.Fecha_Final, mi.Es_Finalizable, mi.Id_Detalle_Estado, md.Descripcion AS DescripcionMetaDepartamental, ae.Id_Area_Ejecutora, ae.Nombre AS NombreAreaEjecutora, m.Num_Meta AS NumMetaPadre, o.Num_Objetivo AS NumObjetivoPadre, o.Nombre AS NombreObjetivoPadre, t.Id_Tipo_Objetivo, t.Nombre AS NombreTipoObjetivo, de.Descripcion AS DescripcionEstado FROM dbo.Meta_Individual mi INNER JOIN dbo.Meta_Departamental md ON mi.Id_Meta_Departamental = md.Id_Meta_Departamental INNER JOIN dbo.Meta m ON md.Id_Meta = m.Id_Meta INNER JOIN dbo.Objetivo o ON m.Id_Objetivo = o.Id_Objetivo LEFT JOIN dbo.Tipo_Objetivo t ON o.Id_Tipo_Objetivo = t.Id_Tipo_Objetivo LEFT JOIN dbo.Area_Ejecutora ae ON md.Id_Area_Ejecutora = ae.Id_Area_Ejecutora LEFT JOIN dbo.Detalle_Estado de ON mi.Id_Detalle_Estado = de.Id_Detalle_Estado WHERE mi.Id_Meta_Individual = @IdMetaIndividual";
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {
                 using (SqlCommand cmd = new SqlCommand(query, con))
                 {
                     cmd.Parameters.AddWithValue("@IdMetaIndividual", idMetaIndividual);
-                    try { con.Open(); using (SqlDataReader reader = cmd.ExecuteReader()) { if (reader.Read()) { metaInd = new MetaIndividualInfo { /* ... mapping ... */ IdMetaIndividual = Convert.ToInt32(reader["Id_Meta_Individual"]), IdMetaDepartamental = reader["Id_Meta_Departamental"] != DBNull.Value ? Convert.ToInt32(reader["Id_Meta_Departamental"]) : (int?)null, Usuario = reader["Usuario"]?.ToString() ?? string.Empty, Descripcion = reader["DescripcionIndividual"]?.ToString() ?? string.Empty, Alcance = reader["Alcance"]?.ToString() ?? string.Empty, PesoPonderadoN4 = reader["Peso_Ponderado_N4"] != DBNull.Value ? Convert.ToInt32(reader["Peso_Ponderado_N4"]) : (int?)null, PesoPonderadoN5 = reader["Peso_Ponderado_N5"] != DBNull.Value ? Convert.ToInt32(reader["Peso_Ponderado_N5"]) : (int?)null, FechaInicial = reader["Fecha_Inicial"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha_Inicial"]) : (DateTime?)null, FechaFinal = reader["Fecha_Final"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha_Final"]) : (DateTime?)null, EsFinalizable = reader["Es_Finalizable"] != DBNull.Value ? Convert.ToBoolean(reader["Es_Finalizable"]) : (bool?)null, IdDetalleEstado = reader["Id_Detalle_Estado"] != DBNull.Value ? Convert.ToInt32(reader["Id_Detalle_Estado"]) : (int?)null, DescripcionMetaDepartamental = reader["DescripcionMetaDepartamental"]?.ToString() ?? "N/A", IdAreaEjecutora = reader["Id_Area_Ejecutora"] != DBNull.Value ? Convert.ToInt32(reader["Id_Area_Ejecutora"]) : (int?)null, NombreAreaEjecutora = reader["NombreAreaEjecutora"]?.ToString() ?? "N/A", NumMetaPadre = reader["NumMetaPadre"] != DBNull.Value ? Convert.ToInt32(reader["NumMetaPadre"]) : (int?)null, NumObjetivoPadre = reader["NumObjetivoPadre"] != DBNull.Value ? Convert.ToInt32(reader["NumObjetivoPadre"]) : (int?)null, NombreObjetivoPadre = reader["NombreObjetivoPadre"]?.ToString() ?? "N/A", IdTipoObjetivo = reader["Id_Tipo_Objetivo"] != DBNull.Value ? Convert.ToInt32(reader["Id_Tipo_Objetivo"]) : (int?)null, NombreTipoObjetivo = reader["NombreTipoObjetivo"]?.ToString() ?? "N/A", DescripcionEstado = reader["DescripcionEstado"]?.ToString() ?? "N/A" }; } } }
+                    try { con.Open(); using (SqlDataReader reader = cmd.ExecuteReader()) { if (reader.Read()) { metaInd = new MetaIndividualInfo { IdMetaIndividual = Convert.ToInt32(reader["Id_Meta_Individual"]), IdMetaDepartamental = reader["Id_Meta_Departamental"] != DBNull.Value ? Convert.ToInt32(reader["Id_Meta_Departamental"]) : (int?)null, Descripcion = reader["DescripcionIndividual"]?.ToString() ?? string.Empty, PesoPonderadoN4 = reader["Peso_Ponderado_N4"] != DBNull.Value ? Convert.ToInt32(reader["Peso_Ponderado_N4"]) : (int?)null, PesoPonderadoN5 = reader["Peso_Ponderado_N5"] != DBNull.Value ? Convert.ToInt32(reader["Peso_Ponderado_N5"]) : (int?)null, FechaInicial = reader["Fecha_Inicial"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha_Inicial"]) : (DateTime?)null, FechaFinal = reader["Fecha_Final"] != DBNull.Value ? Convert.ToDateTime(reader["Fecha_Final"]) : (DateTime?)null, EsFinalizable = reader["Es_Finalizable"] != DBNull.Value ? Convert.ToBoolean(reader["Es_Finalizable"]) : (bool?)null, IdDetalleEstado = reader["Id_Detalle_Estado"] != DBNull.Value ? Convert.ToInt32(reader["Id_Detalle_Estado"]) : (int?)null, DescripcionMetaDepartamental = reader["DescripcionMetaDepartamental"]?.ToString() ?? "N/A", IdAreaEjecutora = reader["Id_Area_Ejecutora"] != DBNull.Value ? Convert.ToInt32(reader["Id_Area_Ejecutora"]) : (int?)null, NombreAreaEjecutora = reader["NombreAreaEjecutora"]?.ToString() ?? "N/A", NumMetaPadre = reader["NumMetaPadre"] != DBNull.Value ? Convert.ToInt32(reader["NumMetaPadre"]) : (int?)null, NumObjetivoPadre = reader["NumObjetivoPadre"] != DBNull.Value ? Convert.ToInt32(reader["NumObjetivoPadre"]) : (int?)null, NombreObjetivoPadre = reader["NombreObjetivoPadre"]?.ToString() ?? "N/A", IdTipoObjetivo = reader["Id_Tipo_Objetivo"] != DBNull.Value ? Convert.ToInt32(reader["Id_Tipo_Objetivo"]) : (int?)null, NombreTipoObjetivo = reader["NombreTipoObjetivo"]?.ToString() ?? "N/A", DescripcionEstado = reader["DescripcionEstado"]?.ToString() ?? "N/A" }; } } }
                     catch (Exception ex) { Console.WriteLine("Error en ObtenerMetaIndividualPorId: " + ex.Message); throw; }
                 }
             }

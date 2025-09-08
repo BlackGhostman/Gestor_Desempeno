@@ -1,4 +1,4 @@
-﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site1.Master" AutoEventWireup="true" CodeBehind="GestionMetasInd.aspx.cs" Inherits="Gestor_Desempeno.GestionMetasInd" %>
+<%@ Page Title="" Language="C#" MasterPageFile="~/Site1.Master" AutoEventWireup="true" CodeBehind="GestionMetasInd.aspx.cs" Inherits="Gestor_Desempeno.GestionMetasInd" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
     <style>
@@ -108,7 +108,6 @@
                                 <div class="col-md-4"><label class="form-label">Fecha Inicial:</label><asp:TextBox ID="txtModalFechaIni" runat="server" CssClass="form-control date-textbox" TextMode="Date"></asp:TextBox></div>
                                 <div class="col-md-4"><label class="form-label">Fecha Final (Opcional):</label><asp:TextBox ID="txtModalFechaFin" runat="server" CssClass="form-control date-textbox" TextMode="Date"></asp:TextBox></div>
                                 <div class="col-md-4"><div class="form-group mb-3"><label class="form-label d-block">&nbsp;</label><div class="form-check"><asp:CheckBox ID="chkModalFinalizable" runat="server" CssClass="form-check-input" Checked="true" Visible="false" /></div></div></div>
-                                <div class="col-12"><label class="form-label">Alcance:</label><asp:TextBox ID="txtModalAlcance" runat="server" CssClass="form-control" TextMode="MultiLine" Rows="2"></asp:TextBox></div>
                             </div>
                         </div>
                         <div class="modal-footer">

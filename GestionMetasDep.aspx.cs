@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -196,7 +196,6 @@ namespace Gestor_Desempeno
                     txtModalDescMetaDep.Text = metaDep.Descripcion;
                     txtModalPeso.Text = metaDep.PesoPonderado?.ToString() ?? string.Empty;
                     txtModalIndicador.Text = metaDep.Indicador;
-                    txtModalAlcance.Text = metaDep.Alcance;
                     txtModalPrioridad.Text = metaDep.Prioridad?.ToString() ?? string.Empty;
                     txtModalFechaIni.Text = metaDep.FechaInicial?.ToString("yyyy-MM-dd") ?? string.Empty;
                     txtModalFechaFin.Text = metaDep.FechaFinal?.ToString("yyyy-MM-dd") ?? string.Empty;
@@ -256,7 +255,6 @@ namespace Gestor_Desempeno
                 string desc = txtModalDescMetaDep.Text.Trim();
                 int? peso = GetNullableIntFromTextBox(txtModalPeso);
                 string indicador = txtModalIndicador.Text.Trim();
-                string alcance = txtModalAlcance.Text.Trim();
                 int? prioridad = GetNullableIntFromTextBox(txtModalPrioridad);
                 DateTime? fechaIni = GetNullableDateTimeFromTextBox(txtModalFechaIni);
                 DateTime? fechaFin = GetNullableDateTimeFromTextBox(txtModalFechaFin);
@@ -266,12 +264,12 @@ namespace Gestor_Desempeno
 
                 if (metaDepId > 0) // Lógica para Editar
                 {
-                    success = metaDepDAL.ActualizarMetaDepartamental(metaDepId, idMeta, idArea, desc, peso, indicador, alcance, prioridad, fechaIni, fechaFin, idEstado);
+                    success = metaDepDAL.ActualizarMetaDepartamental(metaDepId, idMeta, idArea, desc, peso, indicador, prioridad, fechaIni, fechaFin, idEstado);
                     actionMessage = success ? "Meta Departamental actualizada correctamente." : "Error al actualizar la meta.";
                 }
                 else // Lógica para Agregar
                 {
-                    int nuevoId = metaDepDAL.InsertarMetaDepartamental(idMeta, idArea, desc, peso, indicador, alcance, prioridad, fechaIni, fechaFin, idEstado);
+                    int nuevoId = metaDepDAL.InsertarMetaDepartamental(idMeta, idArea, desc, peso, indicador, prioridad, fechaIni, fechaFin, idEstado);
                     success = (nuevoId > 0);
                     actionMessage = success ? "Meta Departamental agregada correctamente." : "Error al agregar la meta.";
                 }
@@ -327,7 +325,6 @@ namespace Gestor_Desempeno
             txtModalDescMetaDep.Text = "";
             txtModalPeso.Text = "";
             txtModalIndicador.Text = "";
-            txtModalAlcance.Text = "";
             txtModalPrioridad.Text = "";
             txtModalFechaIni.Text = "";
             txtModalFechaFin.Text = "";
