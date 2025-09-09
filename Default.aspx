@@ -2,7 +2,7 @@
 <asp:Content ID="Content1" ContentPlaceHolderID="HeadContent" runat="server">
     <%-- Puedes agregar CSS o meta tags específicos para esta página aquí si es necesario --%>
     <style>
-        /* Estilos solo para Default.aspx solo por ahora otra coasa*/
+        /* Estilos solo para Default.aspx*/
         .welcome-message {
             font-size: 1.5rem;
             color: #333;
