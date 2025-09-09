@@ -60,6 +60,7 @@
             <asp:Literal ID="litMensaje" runat="server" EnableViewState="false"></asp:Literal>
 
             <%-- Filtros --%>
+            <asp:Panel ID="pnlFiltros" runat="server" DefaultButton="btnFiltrar">
             <div class="filter-container">
                 <h5>Filtros</h5>
                 <div class="row g-3 align-items-end">
@@ -70,6 +71,7 @@
                     <div class="col-md-2 d-grid gap-1"><asp:Button ID="btnFiltrar" runat="server" Text="Filtrar" CssClass="btn btn-secondary w-100" OnClick="btnFiltrar_Click" /><asp:Button ID="btnLimpiarFiltros" runat="server" Text="Limpiar" CssClass="btn btn-outline-secondary w-100" OnClick="btnLimpiarFiltros_Click" CausesValidation="false" /></div>
                 </div>
             </div>
+            </asp:Panel>
 
             <%-- GridView --%>
             <div class="gridview-container table-responsive">
