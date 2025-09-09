@@ -40,8 +40,6 @@
             background-color: #f1f1f1;
         }
 
-        .date-textbox { /* Date input styles */
-        }
         /* Ensure modal labels are aligned */
         .modal-body .form-label {
             margin-bottom: 0.25rem;
@@ -137,6 +135,22 @@
 </asp:Content>
 <asp:Content ID="Content3" ContentPlaceHolderID="ScriptsContent" runat="server">
     <script>
+        $(document).ready(function () {
+            initializeSelect2();
+        });
+
+        var prm = Sys.WebForms.PageRequestManager.getInstance();
+        prm.add_endRequest(function () {
+            initializeSelect2();
+        });
+
+        function initializeSelect2() {
+            $('#<%= ddlModalMetaDep.ClientID %>').select2({
+                theme: "bootstrap-5",
+                dropdownParent: $('#metaIndModal')
+            });
+        }
+
         function showModal(modalId) {
             var modalElement = document.getElementById(modalId);
             if (modalElement) {
