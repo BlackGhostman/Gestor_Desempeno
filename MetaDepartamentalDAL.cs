@@ -38,7 +38,7 @@ namespace Gestor_Desempeno
             get
             {
                 // Combine relevant info for easy selection
-                string tipoObj = !string.IsNullOrEmpty(NombreTipoObjetivo) ? $"[{NombreTipoObjetivo}] " : "";
+                string tipoObj = !string.IsNullOrEmpty(NombreTipoObjetivo) ? $"{NombreTipoObjetivo} " : "";
                 string numMeta = NumMetaPadre.HasValue ? $"{NumMetaPadre.Value}. " : "";
                 string desc = Descripcion?.Substring(0, Math.Min(Descripcion.Length, 50)) ?? "Sin Desc.";
                 string ellipsis = (Descripcion?.Length > 50) ? "..." : "";
