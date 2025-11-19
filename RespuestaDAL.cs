@@ -255,18 +255,18 @@ namespace Gestor_Desempeno
             }
 
             string query;
-            if (respuestaExistente != null)
-            {
-                // --- UPDATE ---
-                respuestaId = respuestaExistente.IdRespuesta;
-                query = @"UPDATE dbo.Respuesta  SET
-                            Descripcion = @Descripcion + ',' + CAST((select top 1 Descripcion from Respuesta where Id_Respuesta = 29) AS VARCHAR(MAX)),
-                            Fecha_Entregado = @FechaEntregado,
-                            Id_Detalle_Estado = @IdDetalleEstado
-                      WHERE Id_Respuesta = @IdRespuesta";
-            }
-            else
-            {
+            //if (respuestaExistente != null)
+            //{
+            //    // --- UPDATE ---
+            //    respuestaId = respuestaExistente.IdRespuesta;
+            //    query = @"UPDATE dbo.Respuesta  SET
+            //                Descripcion = @Descripcion + ',' + CAST((select top 1 Descripcion from Respuesta where Id_Respuesta = 29) AS VARCHAR(MAX)),
+            //                Fecha_Entregado = @FechaEntregado,
+            //                Id_Detalle_Estado = @IdDetalleEstado
+            //          WHERE Id_Respuesta = @IdRespuesta";
+            //}
+            //else
+            //{
                 // --- INSERT ---
                 // Nombre_Archivo no se incluye en el INSERT ya que no es una columna de DB según tu RespuestaInfo.
                 query = @"INSERT INTO dbo.Respuesta 
@@ -274,7 +274,7 @@ namespace Gestor_Desempeno
                       VALUES 
                             (@IdMetaIndividual, @Descripcion, @FechaEntregado, @IdDetalleEstado, @CodigoSemanaParam);
                       SELECT SCOPE_IDENTITY();";
-            }
+            //}
 
             using (SqlConnection con = new SqlConnection(GetConnectionString()))
             {
